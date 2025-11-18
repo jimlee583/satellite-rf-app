@@ -14,7 +14,7 @@ def free_space_path_loss_db(frequency_hz: float, distance_m: float) -> float:
     return 20.0 * math.log10(4.0 * math.pi * distance_m * frequency_hz / LIGHT_SPEED)
 
 
-def link_budget_received_power_dbw(
+def link_budget_received_power_db(
     frequency_hz: float,
     distance_m: float,
     tx_power_dbw: float,
@@ -33,5 +33,6 @@ def link_budget_received_power_dbw(
     total_losses_db = tx_losses_db + rx_losses_db + other_losses_db + fspl_db
     pr_dbw = tx_power_dbw + tx_antenna_gain_db + rx_antenna_gain_db - total_losses_db
     return fspl_db, pr_dbw
+
 
 

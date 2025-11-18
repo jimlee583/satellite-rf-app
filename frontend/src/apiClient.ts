@@ -1,4 +1,6 @@
-const API_BASE_URL = "http://localhost:8000/api";
+// During development we rely on the Vite dev server proxy (see vite.config.ts)
+// so calls to `/api/...` are forwarded to the FastAPI backend on port 8000.
+const API_BASE_URL = "/api";
 
 async function request<T>(path: string, body: unknown): Promise<T> {
   const response = await fetch(`${API_BASE_URL}${path}`, {
