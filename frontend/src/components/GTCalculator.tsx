@@ -1,9 +1,22 @@
 import React, { useState } from "react";
 import { api } from "../apiClient";
 
+const LIGHT_SPEED = 299_792_458; // m/s
+
+function parabolicGainDb(efficiency: number, diameterM: number, frequencyGhz: number): number {
+  const frequencyHz = frequencyGhz * 1e9;
+  const wavelength = LIGHT_SPEED / frequencyHz;
+  const gainLinear = efficiency * Math.PI * Math.PI * (diameterM * diameterM) / (wavelength * wavelength);
+  return 10 * Math.log10(gainLinear);
+}
+
 export const GTCalculator: React.FC = () => {
-  const [gainDb, setGainDb] = useState(40);
   const [tempK, setTempK] = useState(500);
+
+  // Antenna parameters instead of direct gain
+  const [efficiency, setEfficiency] = useState(0.6);
+  const [diameterM, setDiameterM] = useState(1.2);
+  const [frequencyGhz, setFrequencyGhz] = useState(12);
 
   const [gtDbPerK, setGtDbPerK] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -13,6 +26,15 @@ export const GTCalculator: React.FC = () => {
     e.preventDefault();
     setLoading(true);
     setError(null);
+
+    if (efficiency <= 0 || efficiency > 1 || diameterM <= 0 || frequencyGhz <= 0) {
+      setLoading(false);
+      setError("Efficiency must be in (0,1], and diameter/frequency must be positive.");
+      return;
+    }
+
+    const gainDb = parabolicGainDb(efficiency, diameterM, frequencyGhz);
+
     try {
       const res = await api.gt({
         antenna_gain_db: gainDb,
@@ -29,14 +51,39 @@ export const GTCalculator: React.FC = () => {
   return (
     <section className="card">
       <h2>G/T</h2>
-      <p className="card-subtitle">Antenna gain to noise temperature.</p>
+      <p className="card-subtitle">
+        Antenna gain-to-noise temperature using reflector efficiency, diameter, and frequency.
+      </p>
       <form onSubmit={handleSubmit} className="form-grid">
         <label>
-          Antenna Gain (dB)
+          Antenna Efficiency (0–1)
           <input
             type="number"
-            value={gainDb}
-            onChange={(e) => setGainDb(Number(e.target.value))}
+            min={0}
+            max={1}
+            step={0.01}
+            value={efficiency}
+            onChange={(e) => setEfficiency(Number(e.target.value))}
+          />
+        </label>
+        <label>
+          Reflector Diameter (m)
+          <input
+            type="number"
+            min={0}
+            step={0.01}
+            value={diameterM}
+            onChange={(e) => setDiameterM(Number(e.target.value))}
+          />
+        </label>
+        <label>
+          Frequency (GHz)
+          <input
+            type="number"
+            min={0}
+            step={1}
+            value={frequencyGhz}
+            onChange={(e) => setFrequencyGhz(Number(e.target.value))}
           />
         </label>
         <label>
@@ -65,6 +112,5 @@ export const GTCalculator: React.FC = () => {
     </section>
   );
 };
-
 
 

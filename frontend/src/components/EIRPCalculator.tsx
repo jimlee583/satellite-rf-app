@@ -1,10 +1,23 @@
 import React, { useState } from "react";
 import { api } from "../apiClient";
 
+const LIGHT_SPEED = 299_792_458; // m/s
+
+function parabolicGainDb(efficiency: number, diameterM: number, frequencyGhz: number): number {
+  const frequencyHz = frequencyGhz * 1e9;
+  const wavelength = LIGHT_SPEED / frequencyHz;
+  const gainLinear = efficiency * Math.PI * Math.PI * (diameterM * diameterM) / (wavelength * wavelength);
+  return 10 * Math.log10(gainLinear);
+}
+
 export const EIRPCalculator: React.FC = () => {
   const [txPowerDbw, setTxPowerDbw] = useState(20);
-  const [txGainDb, setTxGainDb] = useState(40);
   const [txLossDb, setTxLossDb] = useState(1);
+
+  // Antenna parameters instead of direct gain
+  const [efficiency, setEfficiency] = useState(0.6);
+  const [diameterM, setDiameterM] = useState(1.2);
+  const [frequencyGhz, setFrequencyGhz] = useState(12);
 
   const [eirpDbw, setEirpDbw] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -14,6 +27,15 @@ export const EIRPCalculator: React.FC = () => {
     e.preventDefault();
     setLoading(true);
     setError(null);
+
+    if (efficiency <= 0 || efficiency > 1 || diameterM <= 0 || frequencyGhz <= 0) {
+      setLoading(false);
+      setError("Efficiency must be in (0,1], and diameter/frequency must be positive.");
+      return;
+    }
+
+    const txGainDb = parabolicGainDb(efficiency, diameterM, frequencyGhz);
+
     try {
       const res = await api.eirp({
         tx_power_dbw: txPowerDbw,
@@ -31,7 +53,9 @@ export const EIRPCalculator: React.FC = () => {
   return (
     <section className="card">
       <h2>EIRP</h2>
-      <p className="card-subtitle">Effective Isotropic Radiated Power.</p>
+      <p className="card-subtitle">
+        Effective Isotropic Radiated Power using reflector efficiency, diameter, and frequency.
+      </p>
       <form onSubmit={handleSubmit} className="form-grid">
         <label>
           Tx Power (dBW)
@@ -42,11 +66,34 @@ export const EIRPCalculator: React.FC = () => {
           />
         </label>
         <label>
-          Tx Antenna Gain (dB)
+          Antenna Efficiency (0–1)
           <input
             type="number"
-            value={txGainDb}
-            onChange={(e) => setTxGainDb(Number(e.target.value))}
+            min={0}
+            max={1}
+            step={0.01}
+            value={efficiency}
+            onChange={(e) => setEfficiency(Number(e.target.value))}
+          />
+        </label>
+        <label>
+          Reflector Diameter (m)
+          <input
+            type="number"
+            min={0}
+            step={0.01}
+            value={diameterM}
+            onChange={(e) => setDiameterM(Number(e.target.value))}
+          />
+        </label>
+        <label>
+          Frequency (GHz)
+          <input
+            type="number"
+            min={0}
+            step={1}
+            value={frequencyGhz}
+            onChange={(e) => setFrequencyGhz(Number(e.target.value))}
           />
         </label>
         <label>

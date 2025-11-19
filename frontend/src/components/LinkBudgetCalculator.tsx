@@ -2,8 +2,9 @@ import React, { useState } from "react";
 import { api } from "../apiClient";
 
 export const LinkBudgetCalculator: React.FC = () => {
-  const [frequencyHz, setFrequencyHz] = useState(12e9);
-  const [distanceM, setDistanceM] = useState(3.6e7);
+  // UI in GHz and km, backend expects Hz and m
+  const [frequencyGhz, setFrequencyGhz] = useState(12);
+  const [distanceKm, setDistanceKm] = useState(36000);
   const [txPowerDbw, setTxPowerDbw] = useState(20);
   const [txGainDb, setTxGainDb] = useState(40);
   const [rxGainDb, setRxGainDb] = useState(40);
@@ -22,8 +23,8 @@ export const LinkBudgetCalculator: React.FC = () => {
     setError(null);
     try {
       const res = await api.linkBudget({
-        frequency_hz: frequencyHz,
-        distance_m: distanceM,
+        frequency_hz: frequencyGhz * 1e9,
+        distance_m: distanceKm * 1e3,
         tx_power_dbw: txPowerDbw,
         tx_antenna_gain_db: txGainDb,
         rx_antenna_gain_db: rxGainDb,
@@ -46,19 +47,19 @@ export const LinkBudgetCalculator: React.FC = () => {
       <p className="card-subtitle">Compute received power and free-space path loss.</p>
       <form onSubmit={handleSubmit} className="form-grid">
         <label>
-          Frequency (Hz)
+          Frequency (GHz)
           <input
             type="number"
-            value={frequencyHz}
-            onChange={(e) => setFrequencyHz(Number(e.target.value))}
+            value={frequencyGhz}
+            onChange={(e) => setFrequencyGhz(Number(e.target.value))}
           />
         </label>
         <label>
-          Distance (m)
+          Distance (km)
           <input
             type="number"
-            value={distanceM}
-            onChange={(e) => setDistanceM(Number(e.target.value))}
+            value={distanceKm}
+            onChange={(e) => setDistanceKm(Number(e.target.value))}
           />
         </label>
         <label>
