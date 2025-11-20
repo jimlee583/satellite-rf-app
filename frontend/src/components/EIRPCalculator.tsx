@@ -19,6 +19,7 @@ export const EIRPCalculator: React.FC = () => {
   const [diameterM, setDiameterM] = useState(1.2);
   const [frequencyGhz, setFrequencyGhz] = useState(12);
 
+  const [gainDb, setGainDb] = useState<number | null>(null);
   const [eirpDbw, setEirpDbw] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -34,14 +35,15 @@ export const EIRPCalculator: React.FC = () => {
       return;
     }
 
-    const txGainDb = parabolicGainDb(efficiency, diameterM, frequencyGhz);
+    const computedGainDb = parabolicGainDb(efficiency, diameterM, frequencyGhz);
 
     try {
       const res = await api.eirp({
         tx_power_dbw: txPowerDbw,
-        tx_antenna_gain_db: txGainDb,
+        tx_antenna_gain_db: computedGainDb,
         tx_losses_db: txLossDb
       });
+      setGainDb(computedGainDb);
       setEirpDbw(res.eirp_dbw);
     } catch (err) {
       setError((err as Error).message);
@@ -112,11 +114,18 @@ export const EIRPCalculator: React.FC = () => {
 
       {error && <p className="error-text">{error}</p>}
 
-      {eirpDbw !== null && (
+      {(eirpDbw !== null || gainDb !== null) && (
         <div className="results">
-          <p>
-            <strong>EIRP:</strong> {eirpDbw.toFixed(2)} dBW
-          </p>
+          {gainDb !== null && (
+            <p>
+              <strong>Antenna Gain:</strong> {gainDb.toFixed(2)} dB
+            </p>
+          )}
+          {eirpDbw !== null && (
+            <p>
+              <strong>EIRP:</strong> {eirpDbw.toFixed(2)} dBW
+            </p>
+          )}
         </div>
       )}
     </section>

@@ -19,6 +19,7 @@ export const GTCalculator: React.FC = () => {
   const [frequencyGhz, setFrequencyGhz] = useState(12);
 
   const [gtDbPerK, setGtDbPerK] = useState<number | null>(null);
+  const [gainDb, setGainDb] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -33,13 +34,14 @@ export const GTCalculator: React.FC = () => {
       return;
     }
 
-    const gainDb = parabolicGainDb(efficiency, diameterM, frequencyGhz);
+    const computedGainDb = parabolicGainDb(efficiency, diameterM, frequencyGhz);
 
     try {
       const res = await api.gt({
-        antenna_gain_db: gainDb,
+        antenna_gain_db: computedGainDb,
         system_noise_temp_k: tempK
       });
+      setGainDb(computedGainDb);
       setGtDbPerK(res.gt_db_per_k);
     } catch (err) {
       setError((err as Error).message);
@@ -102,11 +104,18 @@ export const GTCalculator: React.FC = () => {
 
       {error && <p className="error-text">{error}</p>}
 
-      {gtDbPerK !== null && (
+      {(gainDb !== null || gtDbPerK !== null) && (
         <div className="results">
-          <p>
-            <strong>G/T:</strong> {gtDbPerK.toFixed(2)} dB/K
-          </p>
+          {gainDb !== null && (
+            <p>
+              <strong>Antenna Gain:</strong> {gainDb.toFixed(2)} dB
+            </p>
+          )}
+          {gtDbPerK !== null && (
+            <p>
+              <strong>G/T:</strong> {gtDbPerK.toFixed(2)} dB/K
+            </p>
+          )}
         </div>
       )}
     </section>
