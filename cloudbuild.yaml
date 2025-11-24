@@ -4,7 +4,6 @@ substitutions:
   _REPOSITORY: satellite-rf-app-repo
 
 steps:
-  # 1. Build image
   - name: gcr.io/cloud-builders/docker
     args:
       [
@@ -14,7 +13,6 @@ steps:
         "."
       ]
 
-  # 2. Push image
   - name: gcr.io/cloud-builders/docker
     args:
       [
@@ -22,7 +20,6 @@ steps:
         "$_REGION-docker.pkg.dev/$PROJECT_ID/$_REPOSITORY/$_SERVICE_NAME:$COMMIT_SHA"
       ]
 
-  # 3. Deploy to Cloud Run
   - name: gcr.io/google.com/cloudsdktool/cloud-sdk
     entrypoint: gcloud
     args:
@@ -38,3 +35,6 @@ steps:
 
 images:
   - "$_REGION-docker.pkg.dev/$PROJECT_ID/$_REPOSITORY/$_SERVICE_NAME:$COMMIT_SHA"
+
+options:
+  logging: CLOUD_LOGGING_ONLY
