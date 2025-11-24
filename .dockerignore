@@ -24,9 +24,6 @@ yarn.lock
 
 .DS_Store
 
-Dockerfile
-docker-compose.yml
-
 .env
 .env.*
 
