@@ -1,5 +1,5 @@
 substitutions:
-  _REGION: us-central1
+  _REGION: us-west4
   _SERVICE_NAME: satellite-rf-app
   _REPOSITORY: satellite-rf-app-repo
 
