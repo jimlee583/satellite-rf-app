@@ -83,7 +83,7 @@ export const EIRPCalculator: React.FC = () => {
           <input
             type="number"
             min={0}
-            step={0.01}
+            step={0.1}
             value={diameterM}
             onChange={(e) => setDiameterM(Number(e.target.value))}
           />
