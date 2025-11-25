@@ -54,7 +54,7 @@ export const EIRPCalculator: React.FC = () => {
 
   return (
     <section className="card">
-      <h2>EIRP</h2>
+      <h2>EIRP Stufff</h2>
       <p className="card-subtitle">
         Effective Isotropic Radiated Power using reflector efficiency, diameter, and frequency.
       </p>
