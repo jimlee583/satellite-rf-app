@@ -10,16 +10,25 @@ function parabolicGainDb(efficiency: number, diameterM: number, frequencyGhz: nu
   return 10 * Math.log10(gainLinear);
 }
 
+function beamwidth3dBDeg(diameterM: number, frequencyGhz: number): number {
+  // Approximate half-power (3 dB) beamwidth for a circular parabolic reflector:
+  // θ_3dB ≈ 70 * λ / D (degrees)
+  const frequencyHz = frequencyGhz * 1e9;
+  const wavelength = LIGHT_SPEED / frequencyHz;
+  return 70 * (wavelength / diameterM);
+}
+
 export const GTCalculator: React.FC = () => {
   const [tempK, setTempK] = useState(500);
 
   // Antenna parameters instead of direct gain
   const [efficiency, setEfficiency] = useState(0.6);
   const [diameterM, setDiameterM] = useState(1.2);
-  const [frequencyGhz, setFrequencyGhz] = useState(12);
+  const [frequencyGhz, setFrequencyGhz] = useState(8.15);
 
   const [gtDbPerK, setGtDbPerK] = useState<number | null>(null);
   const [gainDb, setGainDb] = useState<number | null>(null);
+  const [beamwidthDeg, setBeamwidthDeg] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -35,6 +44,7 @@ export const GTCalculator: React.FC = () => {
     }
 
     const computedGainDb = parabolicGainDb(efficiency, diameterM, frequencyGhz);
+    const computedBeamwidth = beamwidth3dBDeg(diameterM, frequencyGhz);
 
     try {
       const res = await api.gt({
@@ -42,6 +52,7 @@ export const GTCalculator: React.FC = () => {
         system_noise_temp_k: tempK
       });
       setGainDb(computedGainDb);
+      setBeamwidthDeg(computedBeamwidth);
       setGtDbPerK(res.gt_db_per_k);
     } catch (err) {
       setError((err as Error).message);
@@ -73,7 +84,7 @@ export const GTCalculator: React.FC = () => {
           <input
             type="number"
             min={0}
-            step={0.01}
+            step={0.1}
             value={diameterM}
             onChange={(e) => setDiameterM(Number(e.target.value))}
           />
@@ -83,7 +94,7 @@ export const GTCalculator: React.FC = () => {
           <input
             type="number"
             min={0}
-            step={1}
+            step="any"
             value={frequencyGhz}
             onChange={(e) => setFrequencyGhz(Number(e.target.value))}
           />
@@ -104,11 +115,16 @@ export const GTCalculator: React.FC = () => {
 
       {error && <p className="error-text">{error}</p>}
 
-      {(gainDb !== null || gtDbPerK !== null) && (
+      {(gainDb !== null || gtDbPerK !== null || beamwidthDeg !== null) && (
         <div className="results">
           {gainDb !== null && (
             <p>
               <strong>Antenna Gain:</strong> {gainDb.toFixed(2)} dB
+            </p>
+          )}
+          {beamwidthDeg !== null && (
+            <p>
+              <strong>3 dB Beamwidth (nadir):</strong> {beamwidthDeg.toFixed(2)}°
             </p>
           )}
           {gtDbPerK !== null && (

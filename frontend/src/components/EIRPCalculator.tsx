@@ -6,8 +6,17 @@ const LIGHT_SPEED = 299_792_458; // m/s
 function parabolicGainDb(efficiency: number, diameterM: number, frequencyGhz: number): number {
   const frequencyHz = frequencyGhz * 1e9;
   const wavelength = LIGHT_SPEED / frequencyHz;
-  const gainLinear = efficiency * Math.PI * Math.PI * (diameterM * diameterM) / (wavelength * wavelength);
+  const gainLinear =
+    (efficiency * Math.PI * Math.PI * (diameterM * diameterM)) / (wavelength * wavelength);
   return 10 * Math.log10(gainLinear);
+}
+
+function beamwidth3dBDeg(diameterM: number, frequencyGhz: number): number {
+  // Approximate half-power (3 dB) beamwidth for a circular parabolic reflector:
+  // θ_3dB ≈ 70 * λ / D (degrees)
+  const frequencyHz = frequencyGhz * 1e9;
+  const wavelength = LIGHT_SPEED / frequencyHz;
+  return (70 * wavelength) / diameterM;
 }
 
 export const EIRPCalculator: React.FC = () => {
@@ -17,9 +26,10 @@ export const EIRPCalculator: React.FC = () => {
   // Antenna parameters instead of direct gain
   const [efficiency, setEfficiency] = useState(0.6);
   const [diameterM, setDiameterM] = useState(1.2);
-  const [frequencyGhz, setFrequencyGhz] = useState(12);
+  const [frequencyGhz, setFrequencyGhz] = useState(7.5);
 
   const [gainDb, setGainDb] = useState<number | null>(null);
+  const [beamwidthDeg, setBeamwidthDeg] = useState<number | null>(null);
   const [eirpDbw, setEirpDbw] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -36,6 +46,7 @@ export const EIRPCalculator: React.FC = () => {
     }
 
     const computedGainDb = parabolicGainDb(efficiency, diameterM, frequencyGhz);
+    const computedBeamwidth = beamwidth3dBDeg(diameterM, frequencyGhz);
 
     try {
       const res = await api.eirp({
@@ -44,6 +55,7 @@ export const EIRPCalculator: React.FC = () => {
         tx_losses_db: txLossDb
       });
       setGainDb(computedGainDb);
+      setBeamwidthDeg(computedBeamwidth);
       setEirpDbw(res.eirp_dbw);
     } catch (err) {
       setError((err as Error).message);
@@ -54,7 +66,7 @@ export const EIRPCalculator: React.FC = () => {
 
   return (
     <section className="card">
-      <h2>EIRP Stufff</h2>
+      <h2>EIRP</h2>
       <p className="card-subtitle">
         Effective Isotropic Radiated Power using reflector efficiency, diameter, and frequency.
       </p>
@@ -93,7 +105,7 @@ export const EIRPCalculator: React.FC = () => {
           <input
             type="number"
             min={0}
-            step={1}
+            step="any"
             value={frequencyGhz}
             onChange={(e) => setFrequencyGhz(Number(e.target.value))}
           />
@@ -114,11 +126,16 @@ export const EIRPCalculator: React.FC = () => {
 
       {error && <p className="error-text">{error}</p>}
 
-      {(eirpDbw !== null || gainDb !== null) && (
+      {(eirpDbw !== null || gainDb !== null || beamwidthDeg !== null) && (
         <div className="results">
           {gainDb !== null && (
             <p>
               <strong>Antenna Gain:</strong> {gainDb.toFixed(2)} dB
+            </p>
+          )}
+          {beamwidthDeg !== null && (
+            <p>
+              <strong>3 dB Beamwidth (nadir):</strong> {beamwidthDeg.toFixed(2)}°
             </p>
           )}
           {eirpDbw !== null && (
