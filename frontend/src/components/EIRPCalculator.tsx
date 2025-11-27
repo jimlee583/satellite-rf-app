@@ -26,7 +26,7 @@ export const EIRPCalculator: React.FC = () => {
   // Antenna parameters instead of direct gain
   const [efficiency, setEfficiency] = useState(0.6);
   const [diameterM, setDiameterM] = useState(1.2);
-  const [frequencyGhz, setFrequencyGhz] = useState(7.5);
+  const [frequencyGhz, setFrequencyGhz] = useState(20);
 
   const [gainDb, setGainDb] = useState<number | null>(null);
   const [beamwidthDeg, setBeamwidthDeg] = useState<number | null>(null);

@@ -24,7 +24,7 @@ export const GTCalculator: React.FC = () => {
   // Antenna parameters instead of direct gain
   const [efficiency, setEfficiency] = useState(0.6);
   const [diameterM, setDiameterM] = useState(1.2);
-  const [frequencyGhz, setFrequencyGhz] = useState(8.15);
+  const [frequencyGhz, setFrequencyGhz] = useState(30);
 
   const [gtDbPerK, setGtDbPerK] = useState<number | null>(null);
   const [gainDb, setGainDb] = useState<number | null>(null);
