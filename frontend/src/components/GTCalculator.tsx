@@ -69,7 +69,7 @@ export const GTCalculator: React.FC = () => {
       </p>
       <form onSubmit={handleSubmit} className="form-grid">
         <label>
-          Antenna Efficiency (0–1)
+          Efficiency
           <input
             type="number"
             min={0}
@@ -80,7 +80,7 @@ export const GTCalculator: React.FC = () => {
           />
         </label>
         <label>
-          Reflector Diameter (m)
+          Diameter (m)
           <input
             type="number"
             min={0}
@@ -90,7 +90,7 @@ export const GTCalculator: React.FC = () => {
           />
         </label>
         <label>
-          Frequency (GHz)
+          Freq (GHz)
           <input
             type="number"
             min={0}
@@ -100,7 +100,7 @@ export const GTCalculator: React.FC = () => {
           />
         </label>
         <label>
-          System Noise Temp (K)
+          Noise Temp (K)
           <input
             type="number"
             value={tempK}

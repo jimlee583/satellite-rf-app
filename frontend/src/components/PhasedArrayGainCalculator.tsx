@@ -34,7 +34,7 @@ export const PhasedArrayGainCalculator: React.FC = () => {
       <p className="card-subtitle">Array gain from element gain, count, and efficiency.</p>
       <form onSubmit={handleSubmit} className="form-grid">
         <label>
-          Element Gain (dB)
+          Elem Gain (dB)
           <input
             type="number"
             value={elementGainDb}
@@ -42,7 +42,7 @@ export const PhasedArrayGainCalculator: React.FC = () => {
           />
         </label>
         <label>
-          Number of Elements
+          # Elements
           <input
             type="number"
             min={1}
@@ -51,7 +51,7 @@ export const PhasedArrayGainCalculator: React.FC = () => {
           />
         </label>
         <label>
-          Array Efficiency (0–1)
+          Efficiency
           <input
             type="number"
             min={0}

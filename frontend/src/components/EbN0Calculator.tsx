@@ -32,7 +32,7 @@ export const EbN0Calculator: React.FC = () => {
       <p className="card-subtitle">Energy per bit to noise spectral density.</p>
       <form onSubmit={handleSubmit} className="form-grid">
         <label>
-          C/N0 (dB-Hz)
+          C/N₀ (dB-Hz)
           <input
             type="number"
             value={cn0DbHz}
@@ -40,7 +40,7 @@ export const EbN0Calculator: React.FC = () => {
           />
         </label>
         <label>
-          Data Rate (bps)
+          Rate (bps)
           <input
             type="number"
             value={dataRateBps}
