@@ -6,7 +6,6 @@ from ..services import (
     eirp,
     gt,
     ebn0,
-    bcd,
     phased_array,
 )
 
@@ -69,24 +68,6 @@ def compute_ebn0(payload: schema.EbN0Request):
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
     return schema.EbN0Response(ebn0_db=ebn0_db)
-
-
-@router.post("/bcd/encode", response_model=schema.BCDEncodeResponse)
-def encode_bcd(payload: schema.BCDEncodeRequest):
-    try:
-        bits = bcd.int_to_bcd_bits(value=payload.value, digits=payload.digits)
-    except ValueError as exc:
-        raise HTTPException(status_code=400, detail=str(exc)) from exc
-    return schema.BCDEncodeResponse(bcd_bits=bits)
-
-
-@router.post("/bcd/decode", response_model=schema.BCDDecodeResponse)
-def decode_bcd(payload: schema.BCDDecodeRequest):
-    try:
-        value = bcd.bcd_bits_to_int(bcd_bits=payload.bcd_bits)
-    except ValueError as exc:
-        raise HTTPException(status_code=400, detail=str(exc)) from exc
-    return schema.BCDDecodeResponse(value=value)
 
 
 @router.post("/phased-array-gain", response_model=schema.PhasedArrayGainResponse)

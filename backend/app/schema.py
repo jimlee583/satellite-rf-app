@@ -49,23 +49,6 @@ class EbN0Response(BaseModel):
     ebn0_db: float
 
 
-class BCDEncodeRequest(BaseModel):
-    value: int = Field(..., ge=0, description="Non-negative integer to encode")
-    digits: int = Field(..., gt=0, description="Number of BCD digits")
-
-
-class BCDEncodeResponse(BaseModel):
-    bcd_bits: str = Field(..., description="BCD representation as a bit string, e.g. '0001 0011'")
-
-
-class BCDDecodeRequest(BaseModel):
-    bcd_bits: str = Field(..., description="BCD representation as a bit string, spaces allowed between nibbles")
-
-
-class BCDDecodeResponse(BaseModel):
-    value: int
-
-
 class PhasedArrayGainRequest(BaseModel):
     element_gain_db: float = Field(..., description="Single element gain in dB")
     num_elements: int = Field(..., gt=0, description="Number of antenna elements in the array")

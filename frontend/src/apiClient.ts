@@ -49,12 +49,6 @@ export const api = {
   ebn0: (payload: { cn0_db_hz: number; data_rate_bps: number }) =>
     request<{ ebn0_db: number }>("/calculations/ebn0", payload),
 
-  bcdEncode: (payload: { value: number; digits: number }) =>
-    request<{ bcd_bits: string }>("/calculations/bcd/encode", payload),
-
-  bcdDecode: (payload: { bcd_bits: string }) =>
-    request<{ value: number }>("/calculations/bcd/decode", payload),
-
   phasedArrayGain: (payload: {
     element_gain_db: number;
     num_elements: number;
