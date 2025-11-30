@@ -69,7 +69,7 @@ export const BCDTool: React.FC = () => {
       {mode === "encode" ? (
         <form onSubmit={handleEncode} className="form-grid">
           <label>
-            Integer Value
+            Value
             <input
               type="number"
               value={value}

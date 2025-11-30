@@ -47,7 +47,7 @@ export const LinkBudgetCalculator: React.FC = () => {
       <p className="card-subtitle">Compute received power and free-space path loss.</p>
       <form onSubmit={handleSubmit} className="form-grid">
         <label>
-          Frequency (GHz)
+          Freq (GHz)
           <input
             type="number"
             value={frequencyGhz}
@@ -55,7 +55,7 @@ export const LinkBudgetCalculator: React.FC = () => {
           />
         </label>
         <label>
-          Distance (km)
+          Dist (km)
           <input
             type="number"
             value={distanceKm}
@@ -63,7 +63,7 @@ export const LinkBudgetCalculator: React.FC = () => {
           />
         </label>
         <label>
-          Tx Power (dBW)
+          Tx Pwr (dBW)
           <input
             type="number"
             value={txPowerDbw}
@@ -71,7 +71,7 @@ export const LinkBudgetCalculator: React.FC = () => {
           />
         </label>
         <label>
-          Tx Antenna Gain (dB)
+          Tx Gain (dB)
           <input
             type="number"
             value={txGainDb}
@@ -79,7 +79,7 @@ export const LinkBudgetCalculator: React.FC = () => {
           />
         </label>
         <label>
-          Rx Antenna Gain (dB)
+          Rx Gain (dB)
           <input
             type="number"
             value={rxGainDb}
@@ -87,7 +87,7 @@ export const LinkBudgetCalculator: React.FC = () => {
           />
         </label>
         <label>
-          Tx Losses (dB)
+          Tx Loss (dB)
           <input
             type="number"
             value={txLossDb}
@@ -95,7 +95,7 @@ export const LinkBudgetCalculator: React.FC = () => {
           />
         </label>
         <label>
-          Rx Losses (dB)
+          Rx Loss (dB)
           <input
             type="number"
             value={rxLossDb}
@@ -103,7 +103,7 @@ export const LinkBudgetCalculator: React.FC = () => {
           />
         </label>
         <label>
-          Other Losses (dB)
+          Other Loss (dB)
           <input
             type="number"
             value={otherLossDb}

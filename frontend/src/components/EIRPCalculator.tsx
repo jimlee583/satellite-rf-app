@@ -72,7 +72,7 @@ export const EIRPCalculator: React.FC = () => {
       </p>
       <form onSubmit={handleSubmit} className="form-grid">
         <label>
-          Tx Power (dBW)
+          Tx Pwr (dBW)
           <input
             type="number"
             value={txPowerDbw}
@@ -80,7 +80,7 @@ export const EIRPCalculator: React.FC = () => {
           />
         </label>
         <label>
-          Antenna Efficiency (0–1)
+          Efficiency
           <input
             type="number"
             min={0}
@@ -91,7 +91,7 @@ export const EIRPCalculator: React.FC = () => {
           />
         </label>
         <label>
-          Reflector Diameter (m)
+          Diameter (m)
           <input
             type="number"
             min={0}
@@ -101,7 +101,7 @@ export const EIRPCalculator: React.FC = () => {
           />
         </label>
         <label>
-          Frequency (GHz)
+          Freq (GHz)
           <input
             type="number"
             min={0}
@@ -111,7 +111,7 @@ export const EIRPCalculator: React.FC = () => {
           />
         </label>
         <label>
-          Tx Losses (dB)
+          Tx Loss (dB)
           <input
             type="number"
             value={txLossDb}
