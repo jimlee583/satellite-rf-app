@@ -3,7 +3,6 @@ import { LinkBudgetCalculator } from "./components/LinkBudgetCalculator";
 import { EIRPCalculator } from "./components/EIRPCalculator";
 import { GTCalculator } from "./components/GTCalculator";
 import { EbN0Calculator } from "./components/EbN0Calculator";
-import { BCDTool } from "./components/BCDTool";
 import { PhasedArrayGainCalculator } from "./components/PhasedArrayGainCalculator";
 
 const App: React.FC = () => {
@@ -13,7 +12,7 @@ const App: React.FC = () => {
         <div>
           <h1>Satellite RF Communications Calculator</h1>
           <p className="app-subtitle">
-            Quick evaluations of link budgets, EIRP, G/T, Eb/N0, BCD, and phased arrays.
+            Quick evaluations of link budgets, EIRP, G/T, Eb/N0, and phased arrays.
           </p>
         </div>
         <span className="app-badge">FastAPI · React · TypeScript</span>
@@ -25,7 +24,6 @@ const App: React.FC = () => {
           <EIRPCalculator />
           <GTCalculator />
           <EbN0Calculator />
-          <BCDTool />
           <PhasedArrayGainCalculator />
         </div>
       </main>
