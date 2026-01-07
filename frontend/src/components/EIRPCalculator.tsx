@@ -70,6 +70,21 @@ export const EIRPCalculator: React.FC = () => {
       <p className="card-subtitle">
         Effective Isotropic Radiated Power using reflector efficiency, diameter, and frequency.
       </p>
+      <div className="formula-box">
+        <div className="formula-row">
+          <span className="formula-label">Antenna Gain:</span>
+          <span className="formula">
+            G<sub>dB</sub> = 10·log<sub>10</sub>(η·(πD/λ)²)
+          </span>
+        </div>
+        <div className="formula-row">
+          <span className="formula-label">3dB Beamwidth:</span>
+          <span className="formula">
+            θ<sub>3dB</sub> ≈ 70·λ/D
+          </span>
+        </div>
+        <span className="formula-note">where λ = c/f</span>
+      </div>
       <form onSubmit={handleSubmit} className="form-grid">
         <label>
           Tx Pwr (dBW)

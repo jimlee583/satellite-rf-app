@@ -185,6 +185,46 @@ button.primary:disabled {
   color: #f9fafb;
 }
 
+.formula-box {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px 14px;
+  border-radius: 10px;
+  background: rgba(15, 23, 42, 0.7);
+  border: 1px solid rgba(96, 165, 250, 0.25);
+  font-size: 0.85rem;
+}
+
+.formula-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 10px;
+}
+
+.formula-label {
+  color: #9ca3af;
+  font-weight: 500;
+}
+
+.formula {
+  font-family: "Cambria Math", "Times New Roman", serif;
+  font-size: 1.05em;
+  color: #a5f3fc;
+  letter-spacing: 0.02em;
+}
+
+.formula sub {
+  font-size: 0.75em;
+}
+
+.formula-note {
+  color: #6b7280;
+  font-size: 0.8em;
+  font-style: italic;
+}
+
 .results {
   margin-top: 6px;
   padding-top: 6px;
