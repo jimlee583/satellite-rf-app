@@ -54,6 +54,27 @@ export const LinkBudgetCalculator: React.FC = () => {
     <section className="card">
       <h2>Link Budget</h2>
       <p className="card-subtitle">Compute received power and free-space path loss.</p>
+      <div className="formula-box">
+        <div className="formula-row">
+          <span className="formula-label">FSPL:</span>
+          <span className="formula">
+            FSPL = 20·log<sub>10</sub>(4πdf/c)
+          </span>
+        </div>
+        <div className="formula-row">
+          <span className="formula-label">Received Power:</span>
+          <span className="formula">
+            P<sub>r</sub> = P<sub>t</sub> + G<sub>t</sub> + G<sub>r</sub> − FSPL − L<sub>tx</sub> − L<sub>rx</sub> − L<sub>other</sub>
+          </span>
+        </div>
+        <div className="formula-row">
+          <span className="formula-label">C/N₀:</span>
+          <span className="formula">
+            C/N<sub>0</sub> = P<sub>r</sub> − k − 10·log<sub>10</sub>(T)
+          </span>
+        </div>
+        <span className="formula-note">where k = −228.6 dBW/K/Hz</span>
+      </div>
       <form onSubmit={handleSubmit} className="form-grid">
         <label>
           Freq (GHz)
