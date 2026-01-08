@@ -67,6 +67,27 @@ export const GTCalculator: React.FC = () => {
       <p className="card-subtitle">
         Antenna gain-to-noise temperature using reflector efficiency, diameter, and frequency.
       </p>
+      <div className="formula-box">
+        <div className="formula-row">
+          <span className="formula-label">Antenna Gain:</span>
+          <span className="formula">
+            G<sub>dB</sub> = 10·log<sub>10</sub>(η·(πD/λ)²)
+          </span>
+        </div>
+        <div className="formula-row">
+          <span className="formula-label">3dB Beamwidth:</span>
+          <span className="formula">
+            θ<sub>3dB</sub> ≈ 70·λ/D
+          </span>
+        </div>
+        <div className="formula-row">
+          <span className="formula-label">G/T:</span>
+          <span className="formula">
+            G/T = G<sub>dB</sub> − 10·log<sub>10</sub>(T)
+          </span>
+        </div>
+        <span className="formula-note">where λ = c/f, T in Kelvin</span>
+      </div>
       <form onSubmit={handleSubmit} className="form-grid">
         <label>
           Efficiency
