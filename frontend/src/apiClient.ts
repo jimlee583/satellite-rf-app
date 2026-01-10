@@ -54,7 +54,15 @@ export const api = {
     num_elements: number;
     array_efficiency?: number;
   }) =>
-    request<{ array_gain_db: number }>("/calculations/phased-array-gain", payload)
+    request<{ array_gain_db: number }>("/calculations/phased-array-gain", payload),
+
+  scanLoss: (payload: {
+    satellite_longitude_deg: number;
+    user_latitude_deg: number;
+    user_longitude_deg: number;
+    scan_exponent?: number;
+  }) =>
+    request<{ scan_angle_deg: number; scan_loss_db: number }>("/calculations/scan-loss", payload)
 };
 
 
