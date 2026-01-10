@@ -7,6 +7,7 @@ from ..services import (
     gt,
     ebn0,
     phased_array,
+    scan_loss,
 )
 
 
@@ -82,4 +83,20 @@ def compute_phased_array_gain(payload: schema.PhasedArrayGainRequest):
         raise HTTPException(status_code=400, detail=str(exc)) from exc
     return schema.PhasedArrayGainResponse(array_gain_db=gain_db)
 
+
+@router.post("/scan-loss", response_model=schema.ScanLossResponse)
+def compute_scan_loss(payload: schema.ScanLossRequest):
+    try:
+        scan_angle_deg = scan_loss.compute_nadir_angle_deg(
+            satellite_longitude_deg=payload.satellite_longitude_deg,
+            user_latitude_deg=payload.user_latitude_deg,
+            user_longitude_deg=payload.user_longitude_deg,
+        )
+        loss_db = scan_loss.compute_scan_loss_db(
+            scan_angle_deg=scan_angle_deg,
+            scan_exponent=payload.scan_exponent,
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    return schema.ScanLossResponse(scan_angle_deg=scan_angle_deg, scan_loss_db=loss_db)
 
