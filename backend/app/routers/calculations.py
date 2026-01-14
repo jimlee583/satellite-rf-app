@@ -8,6 +8,7 @@ from ..services import (
     ebn0,
     phased_array,
     scan_loss,
+    azimuth,
 )
 
 
@@ -99,4 +100,15 @@ def compute_scan_loss(payload: schema.ScanLossRequest):
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
     return schema.ScanLossResponse(scan_angle_deg=scan_angle_deg, scan_loss_db=loss_db)
+
+
+@router.post("/azimuth", response_model=schema.AzimuthResponse)
+def compute_azimuth(payload: schema.AzimuthRequest):
+    azimuth_deg = azimuth.compute_azimuth_deg(
+        start_lat_deg=payload.start_lat_deg,
+        start_lon_deg=payload.start_lon_deg,
+        end_lat_deg=payload.end_lat_deg,
+        end_lon_deg=payload.end_lon_deg,
+    )
+    return schema.AzimuthResponse(azimuth_deg=azimuth_deg)
 
