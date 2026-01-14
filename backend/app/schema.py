@@ -74,11 +74,31 @@ class ScanLossResponse(BaseModel):
 
 
 class AzimuthRequest(BaseModel):
-    start_lat_deg: float = Field(..., ge=-90, le=90, description="Latitude of start point in degrees")
-    start_lon_deg: float = Field(..., ge=-180, le=180, description="Longitude of start point in degrees")
-    end_lat_deg: float = Field(..., ge=-90, le=90, description="Latitude of end point in degrees")
-    end_lon_deg: float = Field(..., ge=-180, le=180, description="Longitude of end point in degrees")
+    start_lat_deg: float = Field(..., ge=-90, le=90, description="Latitude of ground station in degrees")
+    start_lon_deg: float = Field(..., ge=-180, le=180, description="Longitude of ground station in degrees")
+    end_lat_deg: float = Field(..., ge=-90, le=90, description="Latitude of subsatellite point in degrees")
+    end_lon_deg: float = Field(..., ge=-180, le=180, description="Longitude of subsatellite point in degrees")
+    satellite_altitude_km: float = Field(
+        35786.0, gt=0, description="Satellite altitude above Earth's surface in km (default: GEO)"
+    )
 
 
 class AzimuthResponse(BaseModel):
     azimuth_deg: float = Field(..., description="Initial bearing (azimuth) in degrees [0, 360)")
+    elevation_deg: float = Field(..., description="Elevation angle in degrees (negative if below horizon)")
+
+
+class BeamOffAxisRequest(BaseModel):
+    sat_lat_deg: float = Field(..., ge=-90, le=90, description="Satellite subsatellite point latitude in degrees")
+    sat_lon_deg: float = Field(..., ge=-180, le=180, description="Satellite subsatellite point longitude in degrees")
+    sat_alt_km: float = Field(35786.0, gt=0, description="Satellite altitude above Earth's surface in km")
+    user_lat_deg: float = Field(..., ge=-90, le=90, description="User terminal latitude in degrees")
+    user_lon_deg: float = Field(..., ge=-180, le=180, description="User terminal longitude in degrees")
+    user_alt_km: float = Field(0.0, ge=0, description="User terminal altitude in km")
+    beam_center_lat_deg: float = Field(..., ge=-90, le=90, description="Beam center latitude in degrees")
+    beam_center_lon_deg: float = Field(..., ge=-180, le=180, description="Beam center longitude in degrees")
+    beam_center_alt_km: float = Field(0.0, ge=0, description="Beam center altitude in km (typically 0)")
+
+
+class BeamOffAxisResponse(BaseModel):
+    off_axis_angle_deg: float = Field(..., description="Beam off-axis angle in degrees")

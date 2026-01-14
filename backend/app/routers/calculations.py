@@ -9,6 +9,7 @@ from ..services import (
     phased_array,
     scan_loss,
     azimuth,
+    beam_off_axis,
 )
 
 
@@ -110,5 +111,31 @@ def compute_azimuth(payload: schema.AzimuthRequest):
         end_lat_deg=payload.end_lat_deg,
         end_lon_deg=payload.end_lon_deg,
     )
-    return schema.AzimuthResponse(azimuth_deg=azimuth_deg)
+    try:
+        elevation_deg = azimuth.compute_elevation_deg(
+            ground_lat_deg=payload.start_lat_deg,
+            ground_lon_deg=payload.start_lon_deg,
+            subsatellite_lat_deg=payload.end_lat_deg,
+            subsatellite_lon_deg=payload.end_lon_deg,
+            satellite_altitude_km=payload.satellite_altitude_km,
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    return schema.AzimuthResponse(azimuth_deg=azimuth_deg, elevation_deg=elevation_deg)
+
+
+@router.post("/beam-off-axis", response_model=schema.BeamOffAxisResponse)
+def compute_beam_off_axis(payload: schema.BeamOffAxisRequest):
+    off_axis_angle_deg = beam_off_axis.compute_beam_off_axis_angle_deg(
+        sat_lat_deg=payload.sat_lat_deg,
+        sat_lon_deg=payload.sat_lon_deg,
+        sat_alt_km=payload.sat_alt_km,
+        user_lat_deg=payload.user_lat_deg,
+        user_lon_deg=payload.user_lon_deg,
+        user_alt_km=payload.user_alt_km,
+        beam_center_lat_deg=payload.beam_center_lat_deg,
+        beam_center_lon_deg=payload.beam_center_lon_deg,
+        beam_center_alt_km=payload.beam_center_alt_km,
+    )
+    return schema.BeamOffAxisResponse(off_axis_angle_deg=off_axis_angle_deg)
 
