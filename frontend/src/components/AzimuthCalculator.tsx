@@ -4,10 +4,12 @@ import { api } from "../apiClient";
 export const AzimuthCalculator: React.FC = () => {
   const [startLatDeg, setStartLatDeg] = useState(40.7128);
   const [startLonDeg, setStartLonDeg] = useState(-74.006);
-  const [endLatDeg, setEndLatDeg] = useState(51.5074);
-  const [endLonDeg, setEndLonDeg] = useState(-0.1278);
+  const [endLatDeg, setEndLatDeg] = useState(0);
+  const [endLonDeg, setEndLonDeg] = useState(-74.006);
+  const [altitudeKm, setAltitudeKm] = useState(35786);
 
   const [azimuthDeg, setAzimuthDeg] = useState<number | null>(null);
+  const [elevationDeg, setElevationDeg] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -21,9 +23,11 @@ export const AzimuthCalculator: React.FC = () => {
         start_lat_deg: startLatDeg,
         start_lon_deg: startLonDeg,
         end_lat_deg: endLatDeg,
-        end_lon_deg: endLonDeg
+        end_lon_deg: endLonDeg,
+        satellite_altitude_km: altitudeKm
       });
       setAzimuthDeg(res.azimuth_deg);
+      setElevationDeg(res.elevation_deg);
     } catch (err) {
       setError((err as Error).message);
     } finally {
@@ -33,10 +37,10 @@ export const AzimuthCalculator: React.FC = () => {
 
   return (
     <section className="card">
-      <h2>Azimuth (Initial Bearing)</h2>
+      <h2>Azimuth &amp; Elevation</h2>
       <p className="card-subtitle">
-        Compute the initial bearing from one point to another on a sphere using the
-        spherical law of cosines.
+        Compute the azimuth (initial bearing) and elevation angle from a ground station
+        to a satellite using spherical trigonometry.
       </p>
       <div className="formula-box">
         <div className="formula-row">
@@ -45,13 +49,19 @@ export const AzimuthCalculator: React.FC = () => {
             θ = atan2(sin(Δλ)·cos(φ<sub>2</sub>), cos(φ<sub>1</sub>)·sin(φ<sub>2</sub>) − sin(φ<sub>1</sub>)·cos(φ<sub>2</sub>)·cos(Δλ))
           </span>
         </div>
+        <div className="formula-row">
+          <span className="formula-label">Elevation:</span>
+          <span className="formula">
+            El = atan[(cos(γ) − R<sub>E</sub>/(R<sub>E</sub>+h)) / sin(γ)]
+          </span>
+        </div>
         <span className="formula-note">
-          where φ<sub>1</sub>, φ<sub>2</sub> are latitudes and Δλ = λ<sub>2</sub> − λ<sub>1</sub>
+          where γ is the central angle, R<sub>E</sub> is Earth radius, h is satellite altitude
         </span>
       </div>
       <form onSubmit={handleSubmit} className="form-grid">
         <label>
-          Start Lat (°)
+          Ground Lat (°)
           <input
             type="number"
             min={-90}
@@ -62,7 +72,7 @@ export const AzimuthCalculator: React.FC = () => {
           />
         </label>
         <label>
-          Start Lon (°)
+          Ground Lon (°)
           <input
             type="number"
             min={-180}
@@ -73,7 +83,7 @@ export const AzimuthCalculator: React.FC = () => {
           />
         </label>
         <label>
-          End Lat (°)
+          Subsat Lat (°)
           <input
             type="number"
             min={-90}
@@ -84,7 +94,7 @@ export const AzimuthCalculator: React.FC = () => {
           />
         </label>
         <label>
-          End Lon (°)
+          Subsat Lon (°)
           <input
             type="number"
             min={-180}
@@ -92,6 +102,16 @@ export const AzimuthCalculator: React.FC = () => {
             step="any"
             value={endLonDeg}
             onChange={(e) => setEndLonDeg(Number(e.target.value))}
+          />
+        </label>
+        <label>
+          Altitude (km)
+          <input
+            type="number"
+            min={0}
+            step="any"
+            value={altitudeKm}
+            onChange={(e) => setAltitudeKm(Number(e.target.value))}
           />
         </label>
 
@@ -102,11 +122,19 @@ export const AzimuthCalculator: React.FC = () => {
 
       {error && <p className="error-text">{error}</p>}
 
-      {azimuthDeg !== null && (
+      {(azimuthDeg !== null || elevationDeg !== null) && (
         <div className="results">
-          <p>
-            <strong>Azimuth:</strong> {azimuthDeg.toFixed(2)}°
-          </p>
+          {azimuthDeg !== null && (
+            <p>
+              <strong>Azimuth:</strong> {azimuthDeg.toFixed(2)}°
+            </p>
+          )}
+          {elevationDeg !== null && (
+            <p>
+              <strong>Elevation:</strong> {elevationDeg.toFixed(2)}°
+              {elevationDeg < 0 && <span className="warning-text"> (below horizon)</span>}
+            </p>
+          )}
         </div>
       )}
     </section>

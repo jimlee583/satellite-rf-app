@@ -6,6 +6,7 @@ import { EbN0Calculator } from "./components/EbN0Calculator";
 import { PhasedArrayGainCalculator } from "./components/PhasedArrayGainCalculator";
 import { ScanLossCalculator } from "./components/ScanLossCalculator";
 import { AzimuthCalculator } from "./components/AzimuthCalculator";
+import { BeamOffAxisCalculator } from "./components/BeamOffAxisCalculator";
 
 const App: React.FC = () => {
   return (
@@ -14,7 +15,7 @@ const App: React.FC = () => {
         <div>
           <h1>Satellite RF Communications Calculator</h1>
           <p className="app-subtitle">
-            Quick evaluations of link budgets, EIRP, G/T, Eb/N0, phased arrays, ESA scan loss, and azimuth.
+            Quick evaluations of link budgets, EIRP, G/T, Eb/N0, phased arrays, scan loss, azimuth, and beam off-axis.
           </p>
         </div>
         <span className="app-badge">FastAPI · React · TypeScript</span>
@@ -29,6 +30,7 @@ const App: React.FC = () => {
           <PhasedArrayGainCalculator />
           <ScanLossCalculator />
           <AzimuthCalculator />
+          <BeamOffAxisCalculator />
         </div>
       </main>
 

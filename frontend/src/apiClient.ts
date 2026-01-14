@@ -69,8 +69,22 @@ export const api = {
     start_lon_deg: number;
     end_lat_deg: number;
     end_lon_deg: number;
+    satellite_altitude_km?: number;
   }) =>
-    request<{ azimuth_deg: number }>("/calculations/azimuth", payload)
+    request<{ azimuth_deg: number; elevation_deg: number }>("/calculations/azimuth", payload),
+
+  beamOffAxis: (payload: {
+    sat_lat_deg: number;
+    sat_lon_deg: number;
+    sat_alt_km?: number;
+    user_lat_deg: number;
+    user_lon_deg: number;
+    user_alt_km?: number;
+    beam_center_lat_deg: number;
+    beam_center_lon_deg: number;
+    beam_center_alt_km?: number;
+  }) =>
+    request<{ off_axis_angle_deg: number }>("/calculations/beam-off-axis", payload)
 };
 
 
