@@ -61,7 +61,6 @@ class PhasedArrayGainResponse(BaseModel):
     array_gain_db: float
 
 
-
 class ScanLossRequest(BaseModel):
     satellite_longitude_deg: float = Field(..., description="GEO satellite longitude in degrees")
     user_latitude_deg: float = Field(..., ge=-90, le=90, description="User latitude in degrees")
@@ -72,3 +71,14 @@ class ScanLossRequest(BaseModel):
 class ScanLossResponse(BaseModel):
     scan_angle_deg: float = Field(..., description="Off-nadir scan angle in degrees")
     scan_loss_db: float = Field(..., description="Scan loss in dB")
+
+
+class AzimuthRequest(BaseModel):
+    start_lat_deg: float = Field(..., ge=-90, le=90, description="Latitude of start point in degrees")
+    start_lon_deg: float = Field(..., ge=-180, le=180, description="Longitude of start point in degrees")
+    end_lat_deg: float = Field(..., ge=-90, le=90, description="Latitude of end point in degrees")
+    end_lon_deg: float = Field(..., ge=-180, le=180, description="Longitude of end point in degrees")
+
+
+class AzimuthResponse(BaseModel):
+    azimuth_deg: float = Field(..., description="Initial bearing (azimuth) in degrees [0, 360)")

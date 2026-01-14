@@ -62,7 +62,15 @@ export const api = {
     user_longitude_deg: number;
     scan_exponent?: number;
   }) =>
-    request<{ scan_angle_deg: number; scan_loss_db: number }>("/calculations/scan-loss", payload)
+    request<{ scan_angle_deg: number; scan_loss_db: number }>("/calculations/scan-loss", payload),
+
+  azimuth: (payload: {
+    start_lat_deg: number;
+    start_lon_deg: number;
+    end_lat_deg: number;
+    end_lon_deg: number;
+  }) =>
+    request<{ azimuth_deg: number }>("/calculations/azimuth", payload)
 };
 
 
