@@ -102,3 +102,27 @@ class BeamOffAxisRequest(BaseModel):
 
 class BeamOffAxisResponse(BaseModel):
     off_axis_angle_deg: float = Field(..., description="Beam off-axis angle in degrees")
+
+
+class WeatherLossRequest(BaseModel):
+    satellite_longitude_deg: float = Field(
+        ..., ge=-180, le=180, description="GEO satellite longitude in degrees"
+    )
+    user_latitude_deg: float = Field(
+        ..., ge=-90, le=90, description="User terminal latitude in degrees"
+    )
+    user_longitude_deg: float = Field(
+        ..., ge=-180, le=180, description="User terminal longitude in degrees"
+    )
+    availability_percent: float = Field(
+        ..., ge=97.0, le=99.999, description="Required link availability percentage (97.0 to 99.999)"
+    )
+    frequency_ghz: float = Field(
+        ..., gt=1.0, le=100.0, description="Signal frequency in GHz (1 to 100)"
+    )
+
+
+class WeatherLossResponse(BaseModel):
+    elevation_deg: float = Field(..., description="Elevation angle to satellite in degrees")
+    rain_rate_mm_hr: float = Field(..., description="Rain rate used for calculation in mm/hr")
+    weather_loss_db: float = Field(..., description="Total weather attenuation in dB")

@@ -10,6 +10,7 @@ from ..services import (
     scan_loss,
     azimuth,
     beam_off_axis,
+    weather_loss,
 )
 
 
@@ -138,4 +139,23 @@ def compute_beam_off_axis(payload: schema.BeamOffAxisRequest):
         beam_center_alt_km=payload.beam_center_alt_km,
     )
     return schema.BeamOffAxisResponse(off_axis_angle_deg=off_axis_angle_deg)
+
+
+@router.post("/weather-loss", response_model=schema.WeatherLossResponse)
+def compute_weather_loss(payload: schema.WeatherLossRequest):
+    try:
+        elevation_deg, rain_rate_mm_hr, loss_db = weather_loss.compute_weather_loss_db(
+            satellite_longitude_deg=payload.satellite_longitude_deg,
+            user_latitude_deg=payload.user_latitude_deg,
+            user_longitude_deg=payload.user_longitude_deg,
+            availability_percent=payload.availability_percent,
+            frequency_ghz=payload.frequency_ghz,
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    return schema.WeatherLossResponse(
+        elevation_deg=elevation_deg,
+        rain_rate_mm_hr=rain_rate_mm_hr,
+        weather_loss_db=loss_db,
+    )
 

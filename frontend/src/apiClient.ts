@@ -84,7 +84,19 @@ export const api = {
     beam_center_lon_deg: number;
     beam_center_alt_km?: number;
   }) =>
-    request<{ off_axis_angle_deg: number }>("/calculations/beam-off-axis", payload)
+    request<{ off_axis_angle_deg: number }>("/calculations/beam-off-axis", payload),
+
+  weatherLoss: (payload: {
+    satellite_longitude_deg: number;
+    user_latitude_deg: number;
+    user_longitude_deg: number;
+    availability_percent: number;
+    frequency_ghz: number;
+  }) =>
+    request<{ elevation_deg: number; rain_rate_mm_hr: number; weather_loss_db: number }>(
+      "/calculations/weather-loss",
+      payload
+    )
 };
 
 
