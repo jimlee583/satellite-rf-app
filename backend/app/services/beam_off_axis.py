@@ -1,5 +1,11 @@
 import math
-from typing import Tuple
+from typing import Dict, Tuple
+
+from app.services.azimuth import (
+    compute_central_angle_deg,
+    compute_nadir_angle_deg,
+    compute_terminal_phi_deg,
+)
 
 # WGS84 ellipsoid parameters
 EARTH_SEMI_MAJOR_AXIS_KM = 6378.137  # Equatorial radius in km
@@ -143,3 +149,146 @@ def compute_beam_off_axis_angle_deg(
 
     theta_rad = math.acos(cos_theta)
     return math.degrees(theta_rad)
+
+
+def compute_spherical_angles(
+    sat_lat_deg: float,
+    sat_lon_deg: float,
+    sat_alt_km: float,
+    target_lat_deg: float,
+    target_lon_deg: float,
+    target_alt_km: float,
+) -> Dict[str, float]:
+    """
+    Compute lambda (central angle), eta (nadir angle), phi (azimuthal angle),
+    and the corresponding unit vector (x, y, z) from satellite to target.
+
+    Parameters
+    ----------
+    sat_lat_deg : float
+        Satellite subsatellite point latitude in degrees
+    sat_lon_deg : float
+        Satellite subsatellite point longitude in degrees
+    sat_alt_km : float
+        Satellite altitude above Earth's surface in km
+    target_lat_deg : float
+        Target latitude in degrees
+    target_lon_deg : float
+        Target longitude in degrees
+    target_alt_km : float
+        Target altitude above Earth's surface in km
+
+    Returns
+    -------
+    Dict[str, float]
+        Dictionary with keys: lambda_deg, eta_deg, phi_deg, x, y, z
+    """
+    # Central angle (lambda) between subsatellite point and target
+    lambda_deg = compute_central_angle_deg(
+        sat_lat_deg, sat_lon_deg,
+        target_lat_deg, target_lon_deg
+    )
+
+    # Nadir angle (eta) at the satellite
+    eta_deg = compute_nadir_angle_deg(lambda_deg, sat_alt_km)
+
+    # Terminal phi angle
+    phi_deg = compute_terminal_phi_deg(
+        target_lat_deg,  # ground station lat
+        sat_lat_deg,     # subsatellite lat
+        lambda_deg
+    )
+
+    # Convert to unit vector
+    eta_rad = math.radians(eta_deg)
+    phi_rad = math.radians(phi_deg)
+
+    x = math.sin(eta_rad) * math.sin(phi_rad)
+    y = math.sin(eta_rad) * math.cos(phi_rad)
+    z = math.cos(eta_rad)
+
+    return {
+        "lambda_deg": lambda_deg,
+        "eta_deg": eta_deg,
+        "phi_deg": phi_deg,
+        "x": x,
+        "y": y,
+        "z": z,
+    }
+
+
+def compute_beam_off_axis_full(
+    sat_lat_deg: float,
+    sat_lon_deg: float,
+    sat_alt_km: float,
+    user_lat_deg: float,
+    user_lon_deg: float,
+    user_alt_km: float,
+    beam_center_lat_deg: float,
+    beam_center_lon_deg: float,
+    beam_center_alt_km: float,
+) -> Dict[str, float]:
+    """
+    Compute beam off-axis angle and all spherical angle components
+    for both satellite-to-user and satellite-to-beam directions.
+
+    Parameters
+    ----------
+    sat_lat_deg : float
+        Satellite subsatellite point latitude in degrees
+    sat_lon_deg : float
+        Satellite subsatellite point longitude in degrees
+    sat_alt_km : float
+        Satellite altitude above Earth's surface in km
+    user_lat_deg : float
+        User terminal latitude in degrees
+    user_lon_deg : float
+        User terminal longitude in degrees
+    user_alt_km : float
+        User terminal altitude in km
+    beam_center_lat_deg : float
+        Beam center latitude in degrees
+    beam_center_lon_deg : float
+        Beam center longitude in degrees
+    beam_center_alt_km : float
+        Beam center altitude in km
+
+    Returns
+    -------
+    Dict[str, float]
+        Dictionary with all computed values
+    """
+    # Compute off-axis angle using existing ECEF method
+    off_axis_angle_deg = compute_beam_off_axis_angle_deg(
+        sat_lat_deg, sat_lon_deg, sat_alt_km,
+        user_lat_deg, user_lon_deg, user_alt_km,
+        beam_center_lat_deg, beam_center_lon_deg, beam_center_alt_km
+    )
+
+    # Compute spherical angles for satellite to user
+    user_angles = compute_spherical_angles(
+        sat_lat_deg, sat_lon_deg, sat_alt_km,
+        user_lat_deg, user_lon_deg, user_alt_km
+    )
+
+    # Compute spherical angles for satellite to beam center
+    beam_angles = compute_spherical_angles(
+        sat_lat_deg, sat_lon_deg, sat_alt_km,
+        beam_center_lat_deg, beam_center_lon_deg, beam_center_alt_km
+    )
+
+    return {
+        "off_axis_angle_deg": off_axis_angle_deg,
+        "sat_to_user_lambda_deg": user_angles["lambda_deg"],
+        "sat_to_user_eta_deg": user_angles["eta_deg"],
+        "sat_to_user_phi_deg": user_angles["phi_deg"],
+        "sat_to_user_x": user_angles["x"],
+        "sat_to_user_y": user_angles["y"],
+        "sat_to_user_z": user_angles["z"],
+        "sat_to_beam_lambda_deg": beam_angles["lambda_deg"],
+        "sat_to_beam_eta_deg": beam_angles["eta_deg"],
+        "sat_to_beam_phi_deg": beam_angles["phi_deg"],
+        "sat_to_beam_x": beam_angles["x"],
+        "sat_to_beam_y": beam_angles["y"],
+        "sat_to_beam_z": beam_angles["z"],
+    }

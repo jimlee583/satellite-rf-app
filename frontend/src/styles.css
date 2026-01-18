@@ -264,5 +264,195 @@ button.primary:disabled {
   }
 }
 
+/* Wide card for complex calculators */
+.card-wide {
+  grid-column: 1 / -1;
+}
+
+/* Collapsible fieldset styles */
+.collapsible-fieldset {
+  border: 1px solid rgba(148, 163, 184, 0.3);
+  border-radius: 10px;
+  padding: 0;
+  margin: 0;
+  background: rgba(15, 23, 42, 0.4);
+}
+
+.collapsible-fieldset legend {
+  padding: 0;
+  margin: 0;
+}
+
+.clickable-legend {
+  cursor: pointer;
+  padding: 10px 14px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: #e5e7eb;
+  user-select: none;
+  display: block;
+  width: 100%;
+}
+
+.clickable-legend:hover {
+  color: #60a5fa;
+}
+
+.fieldset-content {
+  padding: 0 14px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.input-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+}
+
+.input-row label {
+  flex: 0 0 auto;
+  min-width: auto;
+  justify-content: flex-start;
+  gap: 6px;
+}
+
+.subsection-title {
+  margin: 8px 0 4px;
+  font-size: 0.82rem;
+  font-weight: 500;
+  color: #9ca3af;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.2);
+  padding-bottom: 4px;
+}
+
+/* Duplex form styles */
+.duplex-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 8px;
+}
+
+/* Results styles for duplex link */
+.duplex-results {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.warnings-section {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.warning-item {
+  padding: 8px 12px;
+  border-radius: 8px;
+  background: rgba(251, 191, 36, 0.15);
+  border: 1px solid rgba(251, 191, 36, 0.4);
+  color: #fcd34d;
+  font-size: 0.85rem;
+}
+
+.geometry-summary {
+  padding: 12px 14px;
+  border-radius: 10px;
+  background: rgba(15, 23, 42, 0.6);
+  border: 1px solid rgba(148, 163, 184, 0.25);
+}
+
+.geometry-summary h3 {
+  margin: 0 0 8px;
+  font-size: 0.95rem;
+}
+
+.geometry-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
+}
+
+.geometry-grid p {
+  margin: 2px 0;
+  font-size: 0.85rem;
+}
+
+.link-result-section {
+  padding: 12px 14px;
+  border-radius: 10px;
+  background: rgba(15, 23, 42, 0.6);
+  border: 1px solid rgba(148, 163, 184, 0.25);
+}
+
+.link-result-section h3 {
+  margin: 0 0 6px;
+  font-size: 0.95rem;
+  color: #a5f3fc;
+}
+
+.combined-cn0 {
+  margin: 0 0 10px;
+  font-size: 1rem;
+  color: #22c55e;
+}
+
+.hops-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 12px;
+}
+
+.hop-result {
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: rgba(15, 23, 42, 0.5);
+  border: 1px solid rgba(148, 163, 184, 0.2);
+}
+
+.hop-result h5 {
+  margin: 0 0 6px;
+  font-size: 0.85rem;
+  color: #9ca3af;
+}
+
+.hop-metrics {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 16px;
+}
+
+.hop-metrics p {
+  margin: 0;
+  font-size: 0.85rem;
+}
+
+.loss-details {
+  margin-top: 8px;
+  font-size: 0.8rem;
+}
+
+.loss-details summary {
+  cursor: pointer;
+  color: #9ca3af;
+  font-size: 0.78rem;
+}
+
+.loss-details summary:hover {
+  color: #60a5fa;
+}
+
+.loss-details ul {
+  margin: 6px 0 0;
+  padding-left: 18px;
+  color: #9ca3af;
+}
+
+.loss-details li {
+  margin: 2px 0;
+}
+
 
 

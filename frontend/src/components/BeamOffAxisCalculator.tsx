@@ -17,7 +17,21 @@ export const BeamOffAxisCalculator: React.FC = () => {
   const [beamCenterLonDeg, setBeamCenterLonDeg] = useState(0);
   const [beamCenterAltKm, setBeamCenterAltKm] = useState(0);
 
-  const [offAxisAngleDeg, setOffAxisAngleDeg] = useState<number | null>(null);
+  const [result, setResult] = useState<{
+    off_axis_angle_deg: number;
+    sat_to_user_lambda_deg: number;
+    sat_to_user_eta_deg: number;
+    sat_to_user_phi_deg: number;
+    sat_to_user_x: number;
+    sat_to_user_y: number;
+    sat_to_user_z: number;
+    sat_to_beam_lambda_deg: number;
+    sat_to_beam_eta_deg: number;
+    sat_to_beam_phi_deg: number;
+    sat_to_beam_x: number;
+    sat_to_beam_y: number;
+    sat_to_beam_z: number;
+  } | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -38,7 +52,7 @@ export const BeamOffAxisCalculator: React.FC = () => {
         beam_center_lon_deg: beamCenterLonDeg,
         beam_center_alt_km: beamCenterAltKm
       });
-      setOffAxisAngleDeg(res.off_axis_angle_deg);
+      setResult(res);
     } catch (err) {
       setError((err as Error).message);
     } finally {
@@ -180,10 +194,25 @@ export const BeamOffAxisCalculator: React.FC = () => {
 
       {error && <p className="error-text">{error}</p>}
 
-      {offAxisAngleDeg !== null && (
+      {result !== null && (
         <div className="results">
+          <h3>Off-Axis Angle (dot product)</h3>
+          <p><strong>θ:</strong> {result.off_axis_angle_deg.toFixed(4)}°</p>
+
+          <h3>Satellite → User Terminal</h3>
+          <p><strong>λ (lambda):</strong> {result.sat_to_user_lambda_deg.toFixed(4)}°</p>
+          <p><strong>η (eta):</strong> {result.sat_to_user_eta_deg.toFixed(4)}°</p>
+          <p><strong>φ (phi):</strong> {result.sat_to_user_phi_deg.toFixed(4)}°</p>
           <p>
-            <strong>Off-Axis Angle:</strong> {offAxisAngleDeg.toFixed(4)}°
+            <strong>Unit Vector (x, y, z):</strong> ({result.sat_to_user_x.toFixed(6)}, {result.sat_to_user_y.toFixed(6)}, {result.sat_to_user_z.toFixed(6)})
+          </p>
+
+          <h3>Satellite → Beam Center</h3>
+          <p><strong>λ (lambda):</strong> {result.sat_to_beam_lambda_deg.toFixed(4)}°</p>
+          <p><strong>η (eta):</strong> {result.sat_to_beam_eta_deg.toFixed(4)}°</p>
+          <p><strong>φ (phi):</strong> {result.sat_to_beam_phi_deg.toFixed(4)}°</p>
+          <p>
+            <strong>Unit Vector (x, y, z):</strong> ({result.sat_to_beam_x.toFixed(6)}, {result.sat_to_beam_y.toFixed(6)}, {result.sat_to_beam_z.toFixed(6)})
           </p>
         </div>
       )}
