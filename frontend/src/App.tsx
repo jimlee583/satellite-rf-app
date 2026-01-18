@@ -8,6 +8,7 @@ import { ScanLossCalculator } from "./components/ScanLossCalculator";
 import { AzimuthCalculator } from "./components/AzimuthCalculator";
 import { BeamOffAxisCalculator } from "./components/BeamOffAxisCalculator";
 import { WeatherLossCalculator } from "./components/WeatherLossCalculator";
+import { DuplexSatelliteLinkCalculator } from "./components/DuplexSatelliteLinkCalculator";
 
 const App: React.FC = () => {
   return (
@@ -16,7 +17,7 @@ const App: React.FC = () => {
         <div>
           <h1>Satellite RF Communications Calculator</h1>
           <p className="app-subtitle">
-            Quick evaluations of link budgets, EIRP, G/T, Eb/N0, phased arrays, scan loss, azimuth, beam off-axis, and weather loss.
+            Quick evaluations of link budgets, EIRP, G/T, Eb/N0, phased arrays, scan loss, azimuth, beam off-axis, weather loss, and duplex satellite links.
           </p>
         </div>
         <span className="app-badge">FastAPI · React · TypeScript</span>
@@ -24,6 +25,7 @@ const App: React.FC = () => {
 
       <main className="app-main">
         <div className="cards-grid">
+          <DuplexSatelliteLinkCalculator />
           <LinkBudgetCalculator />
           <EIRPCalculator />
           <GTCalculator />

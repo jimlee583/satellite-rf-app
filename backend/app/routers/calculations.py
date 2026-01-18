@@ -11,6 +11,7 @@ from ..services import (
     azimuth,
     beam_off_axis,
     weather_loss,
+    duplex_satellite_link,
 )
 
 
@@ -112,6 +113,12 @@ def compute_azimuth(payload: schema.AzimuthRequest):
         end_lat_deg=payload.end_lat_deg,
         end_lon_deg=payload.end_lon_deg,
     )
+    central_angle_deg = azimuth.compute_central_angle_deg(
+        start_lat_deg=payload.start_lat_deg,
+        start_lon_deg=payload.start_lon_deg,
+        end_lat_deg=payload.end_lat_deg,
+        end_lon_deg=payload.end_lon_deg,
+    )
     try:
         elevation_deg = azimuth.compute_elevation_deg(
             ground_lat_deg=payload.start_lat_deg,
@@ -120,14 +127,34 @@ def compute_azimuth(payload: schema.AzimuthRequest):
             subsatellite_lon_deg=payload.end_lon_deg,
             satellite_altitude_km=payload.satellite_altitude_km,
         )
+        nadir_angle_deg = azimuth.compute_nadir_angle_deg(
+            central_angle_deg=central_angle_deg,
+            satellite_altitude_km=payload.satellite_altitude_km,
+        )
+        terminal_phi_deg = azimuth.compute_terminal_phi_deg(
+            ground_lat_deg=payload.start_lat_deg,
+            subsatellite_lat_deg=payload.end_lat_deg,
+            central_angle_deg=central_angle_deg,
+        )
+        slant_range_km = azimuth.compute_slant_range_km(
+            central_angle_deg=central_angle_deg,
+            satellite_altitude_km=payload.satellite_altitude_km,
+        )
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
-    return schema.AzimuthResponse(azimuth_deg=azimuth_deg, elevation_deg=elevation_deg)
+    return schema.AzimuthResponse(
+        azimuth_deg=azimuth_deg,
+        elevation_deg=elevation_deg,
+        central_angle_deg=central_angle_deg,
+        nadir_angle_deg=nadir_angle_deg,
+        terminal_phi_deg=terminal_phi_deg,
+        slant_range_km=slant_range_km,
+    )
 
 
 @router.post("/beam-off-axis", response_model=schema.BeamOffAxisResponse)
 def compute_beam_off_axis(payload: schema.BeamOffAxisRequest):
-    off_axis_angle_deg = beam_off_axis.compute_beam_off_axis_angle_deg(
+    result = beam_off_axis.compute_beam_off_axis_full(
         sat_lat_deg=payload.sat_lat_deg,
         sat_lon_deg=payload.sat_lon_deg,
         sat_alt_km=payload.sat_alt_km,
@@ -138,7 +165,7 @@ def compute_beam_off_axis(payload: schema.BeamOffAxisRequest):
         beam_center_lon_deg=payload.beam_center_lon_deg,
         beam_center_alt_km=payload.beam_center_alt_km,
     )
-    return schema.BeamOffAxisResponse(off_axis_angle_deg=off_axis_angle_deg)
+    return schema.BeamOffAxisResponse(**result)
 
 
 @router.post("/weather-loss", response_model=schema.WeatherLossResponse)
@@ -158,4 +185,24 @@ def compute_weather_loss(payload: schema.WeatherLossRequest):
         rain_rate_mm_hr=rain_rate_mm_hr,
         weather_loss_db=loss_db,
     )
+
+
+@router.post("/duplex-satellite-link", response_model=schema.DuplexSatelliteLinkResponse)
+def compute_duplex_satellite_link_budget(payload: schema.DuplexSatelliteLinkRequest):
+    """
+    Calculate duplex bent-pipe satellite link budget.
+
+    Computes forward (A→Sat→B) and return (B→Sat→A) links
+    with geometry, losses, and combined C/N0.
+    """
+    try:
+        result = duplex_satellite_link.compute_duplex_satellite_link(
+            terminal_a=payload.terminal_a.model_dump(),
+            terminal_b=payload.terminal_b.model_dump(),
+            satellite=payload.satellite.model_dump(),
+            link_params=payload.link_params.model_dump(),
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    return schema.DuplexSatelliteLinkResponse(**result)
 
