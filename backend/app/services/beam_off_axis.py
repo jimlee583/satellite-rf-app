@@ -3,7 +3,9 @@ from typing import Dict, Tuple
 
 from app.services.azimuth import (
     compute_central_angle_deg,
+    compute_elevation_deg,
     compute_nadir_angle_deg,
+    compute_slant_range_km,
     compute_terminal_phi_deg,
 )
 
@@ -277,6 +279,21 @@ def compute_beam_off_axis_full(
         beam_center_lat_deg, beam_center_lon_deg, beam_center_alt_km
     )
 
+    # Compute elevation angle from user terminal to satellite
+    user_elevation_deg = compute_elevation_deg(
+        ground_lat_deg=user_lat_deg,
+        ground_lon_deg=user_lon_deg,
+        subsatellite_lat_deg=sat_lat_deg,
+        subsatellite_lon_deg=sat_lon_deg,
+        satellite_altitude_km=sat_alt_km,
+    )
+
+    # Compute slant range from user terminal to satellite
+    user_slant_range_km = compute_slant_range_km(
+        central_angle_deg=user_angles["lambda_deg"],
+        satellite_altitude_km=sat_alt_km,
+    )
+
     return {
         "off_axis_angle_deg": off_axis_angle_deg,
         "sat_to_user_lambda_deg": user_angles["lambda_deg"],
@@ -291,4 +308,6 @@ def compute_beam_off_axis_full(
         "sat_to_beam_x": beam_angles["x"],
         "sat_to_beam_y": beam_angles["y"],
         "sat_to_beam_z": beam_angles["z"],
+        "user_elevation_deg": user_elevation_deg,
+        "user_slant_range_km": user_slant_range_km,
     }
