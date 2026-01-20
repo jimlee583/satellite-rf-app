@@ -31,6 +31,8 @@ export const BeamOffAxisCalculator: React.FC = () => {
     sat_to_beam_x: number;
     sat_to_beam_y: number;
     sat_to_beam_z: number;
+    user_elevation_deg: number;
+    user_slant_range_km: number;
   } | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -198,6 +200,10 @@ export const BeamOffAxisCalculator: React.FC = () => {
         <div className="results">
           <h3>Off-Axis Angle (dot product)</h3>
           <p><strong>θ:</strong> {result.off_axis_angle_deg.toFixed(4)}°</p>
+
+          <h3>User Terminal → Satellite</h3>
+          <p><strong>Elevation Angle:</strong> {result.user_elevation_deg.toFixed(4)}°</p>
+          <p><strong>Slant Range:</strong> {result.user_slant_range_km.toFixed(2)} km</p>
 
           <h3>Satellite → User Terminal</h3>
           <p><strong>λ (lambda):</strong> {result.sat_to_user_lambda_deg.toFixed(4)}°</p>

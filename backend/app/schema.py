@@ -122,6 +122,10 @@ class BeamOffAxisResponse(BaseModel):
     sat_to_beam_x: float = Field(..., description="Unit vector x = sin(eta)*sin(phi)")
     sat_to_beam_y: float = Field(..., description="Unit vector y = sin(eta)*cos(phi)")
     sat_to_beam_z: float = Field(..., description="Unit vector z = cos(eta)")
+    
+    # User terminal geometry
+    user_elevation_deg: float = Field(..., description="Elevation angle from user terminal to satellite in degrees")
+    user_slant_range_km: float = Field(..., description="Slant range from user terminal to satellite in km")
 
 
 class WeatherLossRequest(BaseModel):
