@@ -18,14 +18,14 @@ Features:
 import math
 from typing import Dict, List, Tuple, Any, Optional
 
-from app.services.beam_off_axis import (
+from .beam_off_axis import (
     geodetic_to_ecef,
     vector_subtract,
     vector_magnitude,
     vector_dot,
     compute_beam_off_axis_angle_deg,
 )
-from app.services.link_budget import free_space_path_loss_db
+from .link_budget import free_space_path_loss_db
 
 # Constants
 BOLTZMANN_DBW_PER_K_HZ = -228.6  # Boltzmann constant in dBW/K/Hz

@@ -1,7 +1,7 @@
 import math
 from typing import Dict, Tuple
 
-from app.services.azimuth import (
+from .azimuth import (
     compute_central_angle_deg,
     compute_elevation_deg,
     compute_nadir_angle_deg,
