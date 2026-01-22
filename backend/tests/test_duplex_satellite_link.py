@@ -394,25 +394,21 @@ class TestFullDuplexLink:
                 "fwd_uplink_beam": {
                     "center_lat_deg": 40.0,
                     "center_lon_deg": -5.0,
-                    "peak_gain_db": 35.0,
                     "cosine_exponent_n": 1.5,
                 },
                 "fwd_downlink_beam": {
                     "center_lat_deg": 35.0,
                     "center_lon_deg": 10.0,
-                    "peak_gain_db": 35.0,
                     "cosine_exponent_n": 1.5,
                 },
                 "ret_uplink_beam": {
                     "center_lat_deg": 35.0,
                     "center_lon_deg": 10.0,
-                    "peak_gain_db": 35.0,
                     "cosine_exponent_n": 1.5,
                 },
                 "ret_downlink_beam": {
                     "center_lat_deg": 40.0,
                     "center_lon_deg": -5.0,
-                    "peak_gain_db": 35.0,
                     "cosine_exponent_n": 1.5,
                 },
             },

@@ -177,7 +177,6 @@ class BeamInput(BaseModel):
     """Satellite beam parameters"""
     center_lat_deg: float = Field(..., ge=-90, le=90, description="Beam center latitude")
     center_lon_deg: float = Field(..., ge=-180, le=180, description="Beam center longitude")
-    peak_gain_db: float = Field(..., description="Peak antenna gain at beam center in dB")
     cosine_exponent_n: float = Field(1.0, gt=0, description="Exponent n in cos^n(θ) pattern")
 
 
