@@ -150,25 +150,21 @@ export const api = {
       fwd_uplink_beam: {
         center_lat_deg: number;
         center_lon_deg: number;
-        peak_gain_db: number;
         cosine_exponent_n?: number;
       };
       fwd_downlink_beam: {
         center_lat_deg: number;
         center_lon_deg: number;
-        peak_gain_db: number;
         cosine_exponent_n?: number;
       };
       ret_uplink_beam: {
         center_lat_deg: number;
         center_lon_deg: number;
-        peak_gain_db: number;
         cosine_exponent_n?: number;
       };
       ret_downlink_beam: {
         center_lat_deg: number;
         center_lon_deg: number;
-        peak_gain_db: number;
         cosine_exponent_n?: number;
       };
       // Transponder non-linearity

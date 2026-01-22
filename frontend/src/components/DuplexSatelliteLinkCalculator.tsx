@@ -4,7 +4,6 @@ import { api } from "../apiClient";
 interface BeamState {
   center_lat_deg: number;
   center_lon_deg: number;
-  peak_gain_db: number;
   cosine_exponent_n: number;
 }
 
@@ -105,16 +104,16 @@ export const DuplexSatelliteLinkCalculator: React.FC = () => {
 
   // Beams
   const [fwdUplinkBeam, setFwdUplinkBeam] = useState<BeamState>({
-    center_lat_deg: 40, center_lon_deg: -5, peak_gain_db: 35, cosine_exponent_n: 1.5
+    center_lat_deg: 40, center_lon_deg: -5, cosine_exponent_n: 1.5
   });
   const [fwdDownlinkBeam, setFwdDownlinkBeam] = useState<BeamState>({
-    center_lat_deg: 35, center_lon_deg: 10, peak_gain_db: 35, cosine_exponent_n: 1.5
+    center_lat_deg: 35, center_lon_deg: 10, cosine_exponent_n: 1.5
   });
   const [retUplinkBeam, setRetUplinkBeam] = useState<BeamState>({
-    center_lat_deg: 35, center_lon_deg: 10, peak_gain_db: 35, cosine_exponent_n: 1.5
+    center_lat_deg: 35, center_lon_deg: 10, cosine_exponent_n: 1.5
   });
   const [retDownlinkBeam, setRetDownlinkBeam] = useState<BeamState>({
-    center_lat_deg: 40, center_lon_deg: -5, peak_gain_db: 35, cosine_exponent_n: 1.5
+    center_lat_deg: 40, center_lon_deg: -5, cosine_exponent_n: 1.5
   });
 
   // Link Parameters
@@ -499,10 +498,6 @@ export const DuplexSatelliteLinkCalculator: React.FC = () => {
                   <input type="number" step="any" value={fwdUplinkBeam.center_lon_deg} onChange={(e) => updateBeam(setFwdUplinkBeam, "center_lon_deg", Number(e.target.value))} />
                 </label>
                 <label>
-                  Peak Gain (dB)
-                  <input type="number" step="any" value={fwdUplinkBeam.peak_gain_db} onChange={(e) => updateBeam(setFwdUplinkBeam, "peak_gain_db", Number(e.target.value))} />
-                </label>
-                <label>
                   Cosine n
                   <input type="number" step="any" min={0.1} value={fwdUplinkBeam.cosine_exponent_n} onChange={(e) => updateBeam(setFwdUplinkBeam, "cosine_exponent_n", Number(e.target.value))} />
                 </label>
@@ -518,10 +513,6 @@ export const DuplexSatelliteLinkCalculator: React.FC = () => {
                 <label>
                   Center Lon (°)
                   <input type="number" step="any" value={fwdDownlinkBeam.center_lon_deg} onChange={(e) => updateBeam(setFwdDownlinkBeam, "center_lon_deg", Number(e.target.value))} />
-                </label>
-                <label>
-                  Peak Gain (dB)
-                  <input type="number" step="any" value={fwdDownlinkBeam.peak_gain_db} onChange={(e) => updateBeam(setFwdDownlinkBeam, "peak_gain_db", Number(e.target.value))} />
                 </label>
                 <label>
                   Cosine n
@@ -541,10 +532,6 @@ export const DuplexSatelliteLinkCalculator: React.FC = () => {
                   <input type="number" step="any" value={retUplinkBeam.center_lon_deg} onChange={(e) => updateBeam(setRetUplinkBeam, "center_lon_deg", Number(e.target.value))} />
                 </label>
                 <label>
-                  Peak Gain (dB)
-                  <input type="number" step="any" value={retUplinkBeam.peak_gain_db} onChange={(e) => updateBeam(setRetUplinkBeam, "peak_gain_db", Number(e.target.value))} />
-                </label>
-                <label>
                   Cosine n
                   <input type="number" step="any" min={0.1} value={retUplinkBeam.cosine_exponent_n} onChange={(e) => updateBeam(setRetUplinkBeam, "cosine_exponent_n", Number(e.target.value))} />
                 </label>
@@ -560,10 +547,6 @@ export const DuplexSatelliteLinkCalculator: React.FC = () => {
                 <label>
                   Center Lon (°)
                   <input type="number" step="any" value={retDownlinkBeam.center_lon_deg} onChange={(e) => updateBeam(setRetDownlinkBeam, "center_lon_deg", Number(e.target.value))} />
-                </label>
-                <label>
-                  Peak Gain (dB)
-                  <input type="number" step="any" value={retDownlinkBeam.peak_gain_db} onChange={(e) => updateBeam(setRetDownlinkBeam, "peak_gain_db", Number(e.target.value))} />
                 </label>
                 <label>
                   Cosine n
