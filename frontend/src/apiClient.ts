@@ -117,36 +117,37 @@ export const api = {
       lat_deg: number;
       lon_deg: number;
       alt_km?: number;
+      band: "x" | "ka";
       eirp_dbw: number;
       gt_db_per_k: number;
       pointing_loss_db?: number;
       polarization_loss_db?: number;
-      // HPA non-linearity
-      eirp_saturated_dbw?: number | null;
-      hpa_obo_db?: number;
       hpa_npr_db?: number | null;
     };
     terminal_b: {
       lat_deg: number;
       lon_deg: number;
       alt_km?: number;
+      band: "x" | "ka";
       eirp_dbw: number;
       gt_db_per_k: number;
       pointing_loss_db?: number;
       polarization_loss_db?: number;
-      // HPA non-linearity
-      eirp_saturated_dbw?: number | null;
-      hpa_obo_db?: number;
       hpa_npr_db?: number | null;
     };
     satellite: {
       lat_deg?: number;
       lon_deg: number;
       alt_km?: number;
-      fwd_uplink_gt_db_per_k: number;
-      fwd_downlink_eirp_dbw: number;
-      ret_uplink_gt_db_per_k: number;
-      ret_downlink_eirp_dbw: number;
+      // X-band antenna
+      x_band_eirp_dbw: number;
+      x_band_gt_db_per_k: number;
+      x_band_npr_db?: number | null;
+      // Ka-band antenna
+      ka_band_eirp_dbw: number;
+      ka_band_gt_db_per_k: number;
+      ka_band_npr_db?: number | null;
+      // Beams
       fwd_uplink_beam: {
         center_lat_deg: number;
         center_lon_deg: number;
@@ -167,13 +168,6 @@ export const api = {
         center_lon_deg: number;
         cosine_exponent_n?: number;
       };
-      // Transponder non-linearity
-      fwd_downlink_eirp_saturated_dbw?: number | null;
-      fwd_downlink_obo_db?: number;
-      fwd_downlink_npr_db?: number | null;
-      ret_downlink_eirp_saturated_dbw?: number | null;
-      ret_downlink_obo_db?: number;
-      ret_downlink_npr_db?: number | null;
     };
     link_params: {
       fwd_uplink_freq_ghz?: number;

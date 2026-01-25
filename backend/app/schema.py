@@ -1,5 +1,5 @@
 from pydantic import BaseModel, Field
-from typing import Optional
+from typing import Optional, Literal
 
 
 class LinkBudgetRequest(BaseModel):
@@ -162,14 +162,15 @@ class TerminalInput(BaseModel):
     lon_deg: float = Field(..., ge=-180, le=180, description="Longitude in degrees")
     alt_km: float = Field(0.0, ge=0, description="Altitude above sea level in km")
 
+    # Frequency band for this terminal
+    band: Literal["x", "ka"] = Field(..., description="Frequency band: 'x' for X-band or 'ka' for Ka-band")
+
     eirp_dbw: float = Field(..., description="Effective Isotropic Radiated Power in dBW (operating, after back-off)")
     gt_db_per_k: float = Field(..., description="Figure of merit G/T in dB/K")
     pointing_loss_db: float = Field(0.0, ge=0, description="Antenna pointing loss in dB")
     polarization_loss_db: float = Field(0.0, ge=0, description="Polarization mismatch loss in dB")
 
-    # HPA non-linearity parameters (optional)
-    eirp_saturated_dbw: Optional[float] = Field(None, description="Saturated EIRP in dBW (if provided, eirp_dbw is ignored and computed from this minus OBO)")
-    hpa_obo_db: float = Field(0.0, ge=0, description="HPA Output Back-Off in dB")
+    # HPA non-linearity parameter (optional)
     hpa_npr_db: Optional[float] = Field(None, description="HPA Noise Power Ratio in dB at operating point (None = ideal/linear, no intermod)")
 
 
@@ -186,30 +187,21 @@ class SatelliteInput(BaseModel):
     lon_deg: float = Field(..., ge=-180, le=180, description="Subsatellite point longitude")
     alt_km: float = Field(35786.0, gt=0, description="Altitude above Earth surface in km")
 
-    # Forward link (A → Sat → B)
-    fwd_uplink_gt_db_per_k: float = Field(..., description="Satellite G/T for forward uplink")
-    fwd_downlink_eirp_dbw: float = Field(..., description="Satellite EIRP for forward downlink (operating, after back-off)")
+    # X-band antenna parameters
+    x_band_eirp_dbw: float = Field(..., description="X-band antenna EIRP in dBW (operating, after back-off)")
+    x_band_gt_db_per_k: float = Field(..., description="X-band antenna G/T in dB/K")
+    x_band_npr_db: Optional[float] = Field(None, description="X-band transponder NPR in dB (None = ideal)")
 
-    # Return link (B → Sat → A)
-    ret_uplink_gt_db_per_k: float = Field(..., description="Satellite G/T for return uplink")
-    ret_downlink_eirp_dbw: float = Field(..., description="Satellite EIRP for return downlink (operating, after back-off)")
+    # Ka-band antenna parameters
+    ka_band_eirp_dbw: float = Field(..., description="Ka-band antenna EIRP in dBW (operating, after back-off)")
+    ka_band_gt_db_per_k: float = Field(..., description="Ka-band antenna G/T in dB/K")
+    ka_band_npr_db: Optional[float] = Field(None, description="Ka-band transponder NPR in dB (None = ideal)")
 
     # Four independent beams
     fwd_uplink_beam: BeamInput
     fwd_downlink_beam: BeamInput
     ret_uplink_beam: BeamInput
     ret_downlink_beam: BeamInput
-
-    # Transponder non-linearity parameters (optional)
-    # Forward downlink transponder
-    fwd_downlink_eirp_saturated_dbw: Optional[float] = Field(None, description="Forward downlink saturated EIRP in dBW")
-    fwd_downlink_obo_db: float = Field(0.0, ge=0, description="Forward downlink transponder Output Back-Off in dB")
-    fwd_downlink_npr_db: Optional[float] = Field(None, description="Forward downlink transponder NPR in dB (None = ideal)")
-
-    # Return downlink transponder
-    ret_downlink_eirp_saturated_dbw: Optional[float] = Field(None, description="Return downlink saturated EIRP in dBW")
-    ret_downlink_obo_db: float = Field(0.0, ge=0, description="Return downlink transponder Output Back-Off in dB")
-    ret_downlink_npr_db: Optional[float] = Field(None, description="Return downlink transponder NPR in dB (None = ideal)")
 
 
 class LinkParametersInput(BaseModel):
