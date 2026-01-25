@@ -500,36 +500,46 @@ def compute_duplex_satellite_link(
     sat_alt = satellite["alt_km"]
 
     # =========================================================================
-    # COMPUTE OPERATING EIRP (from saturated if provided)
+    # TERMINAL BANDS AND EIRP
     # =========================================================================
 
-    # Terminal A operating EIRP
-    terminal_a_eirp = compute_operating_eirp(
-        eirp_dbw=terminal_a["eirp_dbw"],
-        eirp_saturated_dbw=terminal_a.get("eirp_saturated_dbw"),
-        obo_db=terminal_a.get("hpa_obo_db", 0.0),
-    )
+    terminal_a_band = terminal_a["band"]  # "x" or "ka"
+    terminal_b_band = terminal_b["band"]  # "x" or "ka"
 
-    # Terminal B operating EIRP
-    terminal_b_eirp = compute_operating_eirp(
-        eirp_dbw=terminal_b["eirp_dbw"],
-        eirp_saturated_dbw=terminal_b.get("eirp_saturated_dbw"),
-        obo_db=terminal_b.get("hpa_obo_db", 0.0),
-    )
+    terminal_a_eirp = terminal_a["eirp_dbw"]
+    terminal_b_eirp = terminal_b["eirp_dbw"]
 
-    # Satellite forward downlink operating EIRP
-    sat_fwd_down_eirp = compute_operating_eirp(
-        eirp_dbw=satellite["fwd_downlink_eirp_dbw"],
-        eirp_saturated_dbw=satellite.get("fwd_downlink_eirp_saturated_dbw"),
-        obo_db=satellite.get("fwd_downlink_obo_db", 0.0),
-    )
+    # =========================================================================
+    # SATELLITE PARAMETERS (selected based on terminal bands)
+    # =========================================================================
 
-    # Satellite return downlink operating EIRP
-    sat_ret_down_eirp = compute_operating_eirp(
-        eirp_dbw=satellite["ret_downlink_eirp_dbw"],
-        eirp_saturated_dbw=satellite.get("ret_downlink_eirp_saturated_dbw"),
-        obo_db=satellite.get("ret_downlink_obo_db", 0.0),
-    )
+    # Helper to get satellite params for a given band
+    def get_sat_params_for_band(band: str) -> tuple:
+        """Returns (eirp_dbw, gt_db_per_k, npr_db) for the specified band."""
+        if band == "x":
+            return (
+                satellite["x_band_eirp_dbw"],
+                satellite["x_band_gt_db_per_k"],
+                satellite.get("x_band_npr_db"),
+            )
+        else:  # ka
+            return (
+                satellite["ka_band_eirp_dbw"],
+                satellite["ka_band_gt_db_per_k"],
+                satellite.get("ka_band_npr_db"),
+            )
+
+    # Forward link (A → Sat → B):
+    # - Uplink: Satellite receives from A, use G/T for A's band
+    # - Downlink: Satellite transmits to B, use EIRP/NPR for B's band
+    _, sat_fwd_uplink_gt, _ = get_sat_params_for_band(terminal_a_band)
+    sat_fwd_down_eirp, _, sat_fwd_down_npr = get_sat_params_for_band(terminal_b_band)
+
+    # Return link (B → Sat → A):
+    # - Uplink: Satellite receives from B, use G/T for B's band
+    # - Downlink: Satellite transmits to A, use EIRP/NPR for A's band
+    _, sat_ret_uplink_gt, _ = get_sat_params_for_band(terminal_b_band)
+    sat_ret_down_eirp, _, sat_ret_down_npr = get_sat_params_for_band(terminal_a_band)
 
     # =========================================================================
     # BANDWIDTH PARAMETERS (for C/N and Es/N0)
@@ -581,7 +591,7 @@ def compute_duplex_satellite_link(
     # For uplink, beam roll-off applies to satellite receive gain (G/T)
     fwd_up_cn0, fwd_up_losses = compute_single_hop_cn0(
         tx_eirp_dbw=terminal_a_eirp,
-        rx_gt_db_per_k=satellite["fwd_uplink_gt_db_per_k"] + fwd_up_roll_off,
+        rx_gt_db_per_k=sat_fwd_uplink_gt + fwd_up_roll_off,
         frequency_hz=link_params["fwd_uplink_freq_ghz"] * 1e9,
         slant_range_m=range_a_km * 1e3,
         beam_roll_off_db=fwd_up_roll_off,
@@ -621,7 +631,7 @@ def compute_duplex_satellite_link(
 
     # Forward link intermodulation
     fwd_ci_terminal_hpa = compute_ci_from_npr(terminal_a.get("hpa_npr_db"))
-    fwd_ci_satellite = compute_ci_from_npr(satellite.get("fwd_downlink_npr_db"))
+    fwd_ci_satellite = compute_ci_from_npr(sat_fwd_down_npr)
     fwd_ci_total = combine_ci_sources(fwd_ci_terminal_hpa, fwd_ci_satellite)
 
     # Forward link total C/(N+I)
@@ -645,7 +655,7 @@ def compute_duplex_satellite_link(
 
     ret_up_cn0, ret_up_losses = compute_single_hop_cn0(
         tx_eirp_dbw=terminal_b_eirp,
-        rx_gt_db_per_k=satellite["ret_uplink_gt_db_per_k"] + ret_up_roll_off,
+        rx_gt_db_per_k=sat_ret_uplink_gt + ret_up_roll_off,
         frequency_hz=link_params["ret_uplink_freq_ghz"] * 1e9,
         slant_range_m=range_b_km * 1e3,
         beam_roll_off_db=ret_up_roll_off,
@@ -684,7 +694,7 @@ def compute_duplex_satellite_link(
 
     # Return link intermodulation
     ret_ci_terminal_hpa = compute_ci_from_npr(terminal_b.get("hpa_npr_db"))
-    ret_ci_satellite = compute_ci_from_npr(satellite.get("ret_downlink_npr_db"))
+    ret_ci_satellite = compute_ci_from_npr(sat_ret_down_npr)
     ret_ci_total = combine_ci_sources(ret_ci_terminal_hpa, ret_ci_satellite)
 
     # Return link total C/(N+I)

@@ -369,6 +369,7 @@ class TestFullDuplexLink:
                 "lat_deg": 40.0,
                 "lon_deg": -5.0,
                 "alt_km": 0.0,
+                "band": "ka",
                 "eirp_dbw": 60.0,
                 "gt_db_per_k": 35.0,
                 "pointing_loss_db": 0.5,
@@ -378,6 +379,7 @@ class TestFullDuplexLink:
                 "lat_deg": 35.0,
                 "lon_deg": 10.0,
                 "alt_km": 0.0,
+                "band": "ka",
                 "eirp_dbw": 50.0,
                 "gt_db_per_k": 25.0,
                 "pointing_loss_db": 0.5,
@@ -387,10 +389,15 @@ class TestFullDuplexLink:
                 "lat_deg": 0.0,
                 "lon_deg": 0.0,
                 "alt_km": 35786.0,
-                "fwd_uplink_gt_db_per_k": 10.0,
-                "fwd_downlink_eirp_dbw": 45.0,
-                "ret_uplink_gt_db_per_k": 10.0,
-                "ret_downlink_eirp_dbw": 45.0,
+                # X-band antenna parameters
+                "x_band_eirp_dbw": 42.0,
+                "x_band_gt_db_per_k": 8.0,
+                "x_band_npr_db": None,
+                # Ka-band antenna parameters
+                "ka_band_eirp_dbw": 45.0,
+                "ka_band_gt_db_per_k": 10.0,
+                "ka_band_npr_db": None,
+                # Beams
                 "fwd_uplink_beam": {
                     "center_lat_deg": 40.0,
                     "center_lon_deg": -5.0,
@@ -605,7 +612,8 @@ class TestFullDuplexLink:
 
     def test_intermod_with_satellite_npr(self, basic_link_request):
         """C/I should be calculated when satellite NPR is provided."""
-        basic_link_request["satellite"]["fwd_downlink_npr_db"] = 22.0
+        # Terminal B is Ka-band, so forward downlink uses Ka-band NPR
+        basic_link_request["satellite"]["ka_band_npr_db"] = 22.0
         basic_link_request["link_params"]["symbol_rate_msps"] = 27.5
 
         result = compute_duplex_satellite_link(
@@ -619,12 +627,11 @@ class TestFullDuplexLink:
         assert result["forward_link"]["ci_satellite_transponder_db"] == 22.0
         assert result["forward_link"]["cnir_db"] is not None
 
-    def test_saturated_eirp_with_obo(self, basic_link_request):
-        """Operating EIRP should be calculated from saturated EIRP minus OBO."""
-        # Set saturated EIRP and OBO for terminal A
-        basic_link_request["terminal_a"]["eirp_saturated_dbw"] = 65.0
-        basic_link_request["terminal_a"]["hpa_obo_db"] = 5.0
-        # Operating EIRP should be 65 - 5 = 60 dBW (same as original eirp_dbw)
+    def test_cross_band_link(self, basic_link_request):
+        """Test cross-band scenario where terminals use different bands."""
+        # Terminal A is X-band, Terminal B is Ka-band
+        basic_link_request["terminal_a"]["band"] = "x"
+        basic_link_request["terminal_b"]["band"] = "ka"
 
         result = compute_duplex_satellite_link(
             terminal_a=basic_link_request["terminal_a"],
@@ -633,9 +640,17 @@ class TestFullDuplexLink:
             link_params=basic_link_request["link_params"],
         )
 
-        # Result should be same as without saturated (since 65-5=60)
+        # Forward link: A(X) → Sat → B(Ka)
+        # - Uplink uses X-band G/T (satellite receives from A)
+        # - Downlink uses Ka-band EIRP (satellite transmits to B)
+        # Return link: B(Ka) → Sat → A(X)
+        # - Uplink uses Ka-band G/T (satellite receives from B)
+        # - Downlink uses X-band EIRP (satellite transmits to A)
+
         assert "forward_link" in result
+        assert "return_link" in result
         assert result["forward_link"]["combined_cn0_db_hz"] > 0
+        assert result["return_link"]["combined_cn0_db_hz"] > 0
 
     def test_no_intermod_when_no_npr(self, basic_link_request):
         """No intermod should be calculated when NPR values are not provided."""

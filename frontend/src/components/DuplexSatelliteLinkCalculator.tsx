@@ -1,5 +1,48 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { api } from "../apiClient";
+
+// Terminal preset definitions
+type FrequencyBand = "x" | "ka";
+
+interface TerminalPreset {
+  name: string;
+  band: FrequencyBand;
+  eirp_dbw: number;
+  gt_db_per_k: number;
+  npr_db: number | null;  // null = ideal/linear
+}
+
+const TERMINAL_PRESETS: Record<string, TerminalPreset> = {
+  // Custom (default placeholder) - defaults to Ka-band
+  "custom": { name: "Custom", band: "ka", eirp_dbw: 50, gt_db_per_k: 20, npr_db: null },
+
+  // Manpack terminals
+  "manpack_x": { name: "Manpack (X-band)", band: "x", eirp_dbw: 43, gt_db_per_k: 12, npr_db: 18 },
+  "manpack_ka": { name: "Manpack (Ka-band)", band: "ka", eirp_dbw: 40, gt_db_per_k: 14, npr_db: 16 },
+
+  // SNAP 2.0m
+  "snap_2m_x": { name: "SNAP 2.0m (X-band)", band: "x", eirp_dbw: 56, gt_db_per_k: 24, npr_db: 20 },
+  "snap_2m_ka": { name: "SNAP 2.0m (Ka-band)", band: "ka", eirp_dbw: 52, gt_db_per_k: 28, npr_db: 18 },
+
+  // STT-type
+  "stt_x": { name: "STT (X-band)", band: "x", eirp_dbw: 60, gt_db_per_k: 28, npr_db: 22 },
+  "stt_ka": { name: "STT (Ka-band)", band: "ka", eirp_dbw: 56, gt_db_per_k: 32, npr_db: 20 },
+
+  // Airborne
+  "airborne_ka": { name: "Airborne (Ka-band)", band: "ka", eirp_dbw: 48, gt_db_per_k: 18, npr_db: 16 },
+
+  // Commercial gateway
+  "gateway_x": { name: "Commercial Gateway (X-band)", band: "x", eirp_dbw: 72, gt_db_per_k: 36, npr_db: 24 },
+  "gateway_ka": { name: "Commercial Gateway (Ka-band)", band: "ka", eirp_dbw: 68, gt_db_per_k: 40, npr_db: 22 },
+};
+
+// Default frequencies (GHz) based on band - using midpoint of each band
+// X-band: Ground→Sat = 7.9-8.4 GHz (mid: 8.15), Sat→Ground = 7.25-7.75 GHz (mid: 7.5)
+// Ka-band: Ground→Sat = 30-31 GHz (mid: 30.5), Sat→Ground = 20.2-21.2 GHz (mid: 20.7)
+const FREQUENCY_DEFAULTS: Record<FrequencyBand, { uplink: number; downlink: number }> = {
+  x: { uplink: 8.15, downlink: 7.5 },
+  ka: { uplink: 30.5, downlink: 20.7 },
+};
 
 interface BeamState {
   center_lat_deg: number;
@@ -60,6 +103,8 @@ interface DuplexSatelliteLinkResult {
 
 export const DuplexSatelliteLinkCalculator: React.FC = () => {
   // Terminal A
+  const [terminalAPreset, setTerminalAPreset] = useState("custom");
+  const [terminalABand, setTerminalABand] = useState<FrequencyBand>("ka");
   const [terminalALat, setTerminalALat] = useState(40);
   const [terminalALon, setTerminalALon] = useState(-5);
   const [terminalAAlt, setTerminalAAlt] = useState(0);
@@ -67,12 +112,11 @@ export const DuplexSatelliteLinkCalculator: React.FC = () => {
   const [terminalAGt, setTerminalAGt] = useState(35);
   const [terminalAPointingLoss, setTerminalAPointingLoss] = useState(0.5);
   const [terminalAPolLoss, setTerminalAPolLoss] = useState(0.3);
-  // Terminal A HPA
-  const [terminalAEirpSaturated, setTerminalAEirpSaturated] = useState<number | null>(null);
-  const [terminalAObo, setTerminalAObo] = useState(0);
   const [terminalANpr, setTerminalANpr] = useState<number | null>(null);
 
   // Terminal B
+  const [terminalBPreset, setTerminalBPreset] = useState("custom");
+  const [terminalBBand, setTerminalBBand] = useState<FrequencyBand>("ka");
   const [terminalBLat, setTerminalBLat] = useState(35);
   const [terminalBLon, setTerminalBLon] = useState(10);
   const [terminalBAlt, setTerminalBAlt] = useState(0);
@@ -80,27 +124,20 @@ export const DuplexSatelliteLinkCalculator: React.FC = () => {
   const [terminalBGt, setTerminalBGt] = useState(25);
   const [terminalBPointingLoss, setTerminalBPointingLoss] = useState(0.5);
   const [terminalBPolLoss, setTerminalBPolLoss] = useState(0.3);
-  // Terminal B HPA
-  const [terminalBEirpSaturated, setTerminalBEirpSaturated] = useState<number | null>(null);
-  const [terminalBObo, setTerminalBObo] = useState(0);
   const [terminalBNpr, setTerminalBNpr] = useState<number | null>(null);
 
   // Satellite
   const [satLat, setSatLat] = useState(0);
   const [satLon, setSatLon] = useState(0);
   const [satAlt, setSatAlt] = useState(35786);
-  const [fwdUplinkGt, setFwdUplinkGt] = useState(10);
-  const [fwdDownlinkEirp, setFwdDownlinkEirp] = useState(45);
-  const [retUplinkGt, setRetUplinkGt] = useState(10);
-  const [retDownlinkEirp, setRetDownlinkEirp] = useState(45);
-  // Satellite transponder (forward downlink)
-  const [fwdDownlinkEirpSaturated, setFwdDownlinkEirpSaturated] = useState<number | null>(null);
-  const [fwdDownlinkObo, setFwdDownlinkObo] = useState(0);
-  const [fwdDownlinkNpr, setFwdDownlinkNpr] = useState<number | null>(null);
-  // Satellite transponder (return downlink)
-  const [retDownlinkEirpSaturated, setRetDownlinkEirpSaturated] = useState<number | null>(null);
-  const [retDownlinkObo, setRetDownlinkObo] = useState(0);
-  const [retDownlinkNpr, setRetDownlinkNpr] = useState<number | null>(null);
+  // X-band antenna parameters
+  const [xBandEirp, setXBandEirp] = useState(45);
+  const [xBandGt, setXBandGt] = useState(10);
+  const [xBandNpr, setXBandNpr] = useState<number | null>(null);
+  // Ka-band antenna parameters
+  const [kaBandEirp, setKaBandEirp] = useState(50);
+  const [kaBandGt, setKaBandGt] = useState(15);
+  const [kaBandNpr, setKaBandNpr] = useState<number | null>(null);
 
   // Beams
   const [fwdUplinkBeam, setFwdUplinkBeam] = useState<BeamState>({
@@ -116,11 +153,11 @@ export const DuplexSatelliteLinkCalculator: React.FC = () => {
     center_lat_deg: 40, center_lon_deg: -5, cosine_exponent_n: 1.5
   });
 
-  // Link Parameters
-  const [fwdUplinkFreq, setFwdUplinkFreq] = useState(30);
-  const [fwdDownlinkFreq, setFwdDownlinkFreq] = useState(20);
-  const [retUplinkFreq, setRetUplinkFreq] = useState(30);
-  const [retDownlinkFreq, setRetDownlinkFreq] = useState(20);
+  // Link Parameters - frequencies default based on terminal bands
+  const [fwdUplinkFreq, setFwdUplinkFreq] = useState(FREQUENCY_DEFAULTS.ka.uplink);
+  const [fwdDownlinkFreq, setFwdDownlinkFreq] = useState(FREQUENCY_DEFAULTS.ka.downlink);
+  const [retUplinkFreq, setRetUplinkFreq] = useState(FREQUENCY_DEFAULTS.ka.uplink);
+  const [retDownlinkFreq, setRetDownlinkFreq] = useState(FREQUENCY_DEFAULTS.ka.downlink);
 
   const [weatherFwdUplink, setWeatherFwdUplink] = useState(2);
   const [weatherFwdDownlink, setWeatherFwdDownlink] = useState(1);
@@ -159,6 +196,46 @@ export const DuplexSatelliteLinkCalculator: React.FC = () => {
     setter(prev => ({ ...prev, [field]: value }));
   };
 
+  // Update frequencies when Terminal A band changes
+  // Terminal A affects: Forward Uplink (A→Sat) and Return Downlink (Sat→A)
+  useEffect(() => {
+    setFwdUplinkFreq(FREQUENCY_DEFAULTS[terminalABand].uplink);
+    setRetDownlinkFreq(FREQUENCY_DEFAULTS[terminalABand].downlink);
+  }, [terminalABand]);
+
+  // Update frequencies when Terminal B band changes
+  // Terminal B affects: Forward Downlink (Sat→B) and Return Uplink (B→Sat)
+  useEffect(() => {
+    setFwdDownlinkFreq(FREQUENCY_DEFAULTS[terminalBBand].downlink);
+    setRetUplinkFreq(FREQUENCY_DEFAULTS[terminalBBand].uplink);
+  }, [terminalBBand]);
+
+  const handleTerminalAPresetChange = (presetKey: string) => {
+    setTerminalAPreset(presetKey);
+    const preset = TERMINAL_PRESETS[presetKey];
+    if (preset) {
+      setTerminalABand(preset.band);
+      if (presetKey !== "custom") {
+        setTerminalAEirp(preset.eirp_dbw);
+        setTerminalAGt(preset.gt_db_per_k);
+        setTerminalANpr(preset.npr_db);
+      }
+    }
+  };
+
+  const handleTerminalBPresetChange = (presetKey: string) => {
+    setTerminalBPreset(presetKey);
+    const preset = TERMINAL_PRESETS[presetKey];
+    if (preset) {
+      setTerminalBBand(preset.band);
+      if (presetKey !== "custom") {
+        setTerminalBEirp(preset.eirp_dbw);
+        setTerminalBGt(preset.gt_db_per_k);
+        setTerminalBNpr(preset.npr_db);
+      }
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -170,44 +247,38 @@ export const DuplexSatelliteLinkCalculator: React.FC = () => {
           lat_deg: terminalALat,
           lon_deg: terminalALon,
           alt_km: terminalAAlt,
+          band: terminalABand,
           eirp_dbw: terminalAEirp,
           gt_db_per_k: terminalAGt,
           pointing_loss_db: terminalAPointingLoss,
           polarization_loss_db: terminalAPolLoss,
-          eirp_saturated_dbw: terminalAEirpSaturated,
-          hpa_obo_db: terminalAObo,
           hpa_npr_db: terminalANpr,
         },
         terminal_b: {
           lat_deg: terminalBLat,
           lon_deg: terminalBLon,
           alt_km: terminalBAlt,
+          band: terminalBBand,
           eirp_dbw: terminalBEirp,
           gt_db_per_k: terminalBGt,
           pointing_loss_db: terminalBPointingLoss,
           polarization_loss_db: terminalBPolLoss,
-          eirp_saturated_dbw: terminalBEirpSaturated,
-          hpa_obo_db: terminalBObo,
           hpa_npr_db: terminalBNpr,
         },
         satellite: {
           lat_deg: satLat,
           lon_deg: satLon,
           alt_km: satAlt,
-          fwd_uplink_gt_db_per_k: fwdUplinkGt,
-          fwd_downlink_eirp_dbw: fwdDownlinkEirp,
-          ret_uplink_gt_db_per_k: retUplinkGt,
-          ret_downlink_eirp_dbw: retDownlinkEirp,
+          x_band_eirp_dbw: xBandEirp,
+          x_band_gt_db_per_k: xBandGt,
+          x_band_npr_db: xBandNpr,
+          ka_band_eirp_dbw: kaBandEirp,
+          ka_band_gt_db_per_k: kaBandGt,
+          ka_band_npr_db: kaBandNpr,
           fwd_uplink_beam: fwdUplinkBeam,
           fwd_downlink_beam: fwdDownlinkBeam,
           ret_uplink_beam: retUplinkBeam,
           ret_downlink_beam: retDownlinkBeam,
-          fwd_downlink_eirp_saturated_dbw: fwdDownlinkEirpSaturated,
-          fwd_downlink_obo_db: fwdDownlinkObo,
-          fwd_downlink_npr_db: fwdDownlinkNpr,
-          ret_downlink_eirp_saturated_dbw: retDownlinkEirpSaturated,
-          ret_downlink_obo_db: retDownlinkObo,
-          ret_downlink_npr_db: retDownlinkNpr,
         },
         link_params: {
           fwd_uplink_freq_ghz: fwdUplinkFreq,
@@ -287,10 +358,44 @@ export const DuplexSatelliteLinkCalculator: React.FC = () => {
         {/* Terminal A */}
         <fieldset className="collapsible-fieldset">
           <legend onClick={() => toggleSection("terminalA")} className="clickable-legend">
-            {expandedSections.terminalA ? "▼" : "▶"} Terminal A (Gateway)
+            {expandedSections.terminalA ? "▼" : "▶"} Terminal A
           </legend>
           {expandedSections.terminalA && (
             <div className="fieldset-content">
+              <div className="input-row">
+                <label>
+                  Terminal Type
+                  <select value={terminalAPreset} onChange={(e) => handleTerminalAPresetChange(e.target.value)}>
+                    <option value="custom">Custom</option>
+                    <optgroup label="Manpack">
+                      <option value="manpack_x">Manpack (X-band)</option>
+                      <option value="manpack_ka">Manpack (Ka-band)</option>
+                    </optgroup>
+                    <optgroup label="SNAP 2.0m">
+                      <option value="snap_2m_x">SNAP 2.0m (X-band)</option>
+                      <option value="snap_2m_ka">SNAP 2.0m (Ka-band)</option>
+                    </optgroup>
+                    <optgroup label="STT">
+                      <option value="stt_x">STT (X-band)</option>
+                      <option value="stt_ka">STT (Ka-band)</option>
+                    </optgroup>
+                    <optgroup label="Airborne">
+                      <option value="airborne_ka">Airborne (Ka-band)</option>
+                    </optgroup>
+                    <optgroup label="Commercial Gateway">
+                      <option value="gateway_x">Gateway (X-band)</option>
+                      <option value="gateway_ka">Gateway (Ka-band)</option>
+                    </optgroup>
+                  </select>
+                </label>
+                <label>
+                  Band
+                  <select value={terminalABand} onChange={(e) => setTerminalABand(e.target.value as FrequencyBand)}>
+                    <option value="x">X-Band</option>
+                    <option value="ka">Ka-Band</option>
+                  </select>
+                </label>
+              </div>
               <div className="input-row">
                 <label>
                   Lat (°)
@@ -311,6 +416,10 @@ export const DuplexSatelliteLinkCalculator: React.FC = () => {
                   <input type="number" step="any" value={terminalAEirp} onChange={(e) => setTerminalAEirp(Number(e.target.value))} />
                 </label>
                 <label>
+                  NPR (dB)
+                  <input type="number" step="any" value={terminalANpr ?? ""} placeholder="Ideal" onChange={(e) => setTerminalANpr(e.target.value ? Number(e.target.value) : null)} />
+                </label>
+                <label>
                   G/T (dB/K)
                   <input type="number" step="any" value={terminalAGt} onChange={(e) => setTerminalAGt(Number(e.target.value))} />
                 </label>
@@ -325,21 +434,6 @@ export const DuplexSatelliteLinkCalculator: React.FC = () => {
                   <input type="number" step="any" min={0} value={terminalAPolLoss} onChange={(e) => setTerminalAPolLoss(Number(e.target.value))} />
                 </label>
               </div>
-              <h4 className="subsection-title">HPA Non-Linearity (Optional)</h4>
-              <div className="input-row">
-                <label>
-                  Sat. EIRP (dBW)
-                  <input type="number" step="any" value={terminalAEirpSaturated ?? ""} placeholder="Optional" onChange={(e) => setTerminalAEirpSaturated(e.target.value ? Number(e.target.value) : null)} />
-                </label>
-                <label>
-                  OBO (dB)
-                  <input type="number" step="any" min={0} value={terminalAObo} onChange={(e) => setTerminalAObo(Number(e.target.value))} />
-                </label>
-                <label>
-                  NPR (dB)
-                  <input type="number" step="any" value={terminalANpr ?? ""} placeholder="Ideal" onChange={(e) => setTerminalANpr(e.target.value ? Number(e.target.value) : null)} />
-                </label>
-              </div>
             </div>
           )}
         </fieldset>
@@ -347,10 +441,44 @@ export const DuplexSatelliteLinkCalculator: React.FC = () => {
         {/* Terminal B */}
         <fieldset className="collapsible-fieldset">
           <legend onClick={() => toggleSection("terminalB")} className="clickable-legend">
-            {expandedSections.terminalB ? "▼" : "▶"} Terminal B (User)
+            {expandedSections.terminalB ? "▼" : "▶"} Terminal B
           </legend>
           {expandedSections.terminalB && (
             <div className="fieldset-content">
+              <div className="input-row">
+                <label>
+                  Terminal Type
+                  <select value={terminalBPreset} onChange={(e) => handleTerminalBPresetChange(e.target.value)}>
+                    <option value="custom">Custom</option>
+                    <optgroup label="Manpack">
+                      <option value="manpack_x">Manpack (X-band)</option>
+                      <option value="manpack_ka">Manpack (Ka-band)</option>
+                    </optgroup>
+                    <optgroup label="SNAP 2.0m">
+                      <option value="snap_2m_x">SNAP 2.0m (X-band)</option>
+                      <option value="snap_2m_ka">SNAP 2.0m (Ka-band)</option>
+                    </optgroup>
+                    <optgroup label="STT">
+                      <option value="stt_x">STT (X-band)</option>
+                      <option value="stt_ka">STT (Ka-band)</option>
+                    </optgroup>
+                    <optgroup label="Airborne">
+                      <option value="airborne_ka">Airborne (Ka-band)</option>
+                    </optgroup>
+                    <optgroup label="Commercial Gateway">
+                      <option value="gateway_x">Gateway (X-band)</option>
+                      <option value="gateway_ka">Gateway (Ka-band)</option>
+                    </optgroup>
+                  </select>
+                </label>
+                <label>
+                  Band
+                  <select value={terminalBBand} onChange={(e) => setTerminalBBand(e.target.value as FrequencyBand)}>
+                    <option value="x">X-Band</option>
+                    <option value="ka">Ka-Band</option>
+                  </select>
+                </label>
+              </div>
               <div className="input-row">
                 <label>
                   Lat (°)
@@ -371,6 +499,10 @@ export const DuplexSatelliteLinkCalculator: React.FC = () => {
                   <input type="number" step="any" value={terminalBEirp} onChange={(e) => setTerminalBEirp(Number(e.target.value))} />
                 </label>
                 <label>
+                  NPR (dB)
+                  <input type="number" step="any" value={terminalBNpr ?? ""} placeholder="Ideal" onChange={(e) => setTerminalBNpr(e.target.value ? Number(e.target.value) : null)} />
+                </label>
+                <label>
                   G/T (dB/K)
                   <input type="number" step="any" value={terminalBGt} onChange={(e) => setTerminalBGt(Number(e.target.value))} />
                 </label>
@@ -383,21 +515,6 @@ export const DuplexSatelliteLinkCalculator: React.FC = () => {
                 <label>
                   Pol Loss (dB)
                   <input type="number" step="any" min={0} value={terminalBPolLoss} onChange={(e) => setTerminalBPolLoss(Number(e.target.value))} />
-                </label>
-              </div>
-              <h4 className="subsection-title">HPA Non-Linearity (Optional)</h4>
-              <div className="input-row">
-                <label>
-                  Sat. EIRP (dBW)
-                  <input type="number" step="any" value={terminalBEirpSaturated ?? ""} placeholder="Optional" onChange={(e) => setTerminalBEirpSaturated(e.target.value ? Number(e.target.value) : null)} />
-                </label>
-                <label>
-                  OBO (dB)
-                  <input type="number" step="any" min={0} value={terminalBObo} onChange={(e) => setTerminalBObo(Number(e.target.value))} />
-                </label>
-                <label>
-                  NPR (dB)
-                  <input type="number" step="any" value={terminalBNpr ?? ""} placeholder="Ideal" onChange={(e) => setTerminalBNpr(e.target.value ? Number(e.target.value) : null)} />
                 </label>
               </div>
             </div>
@@ -425,54 +542,34 @@ export const DuplexSatelliteLinkCalculator: React.FC = () => {
                   <input type="number" step="any" min={0} value={satAlt} onChange={(e) => setSatAlt(Number(e.target.value))} />
                 </label>
               </div>
-              <h4 className="subsection-title">Forward Link (A → Sat → B)</h4>
+              <h4 className="subsection-title">X-Band Antenna</h4>
               <div className="input-row">
                 <label>
-                  Uplink G/T (dB/K)
-                  <input type="number" step="any" value={fwdUplinkGt} onChange={(e) => setFwdUplinkGt(Number(e.target.value))} />
+                  EIRP (dBW)
+                  <input type="number" step="any" value={xBandEirp} onChange={(e) => setXBandEirp(Number(e.target.value))} />
                 </label>
                 <label>
-                  Downlink EIRP (dBW)
-                  <input type="number" step="any" value={fwdDownlinkEirp} onChange={(e) => setFwdDownlinkEirp(Number(e.target.value))} />
+                  NPR (dB)
+                  <input type="number" step="any" value={xBandNpr ?? ""} placeholder="Ideal" onChange={(e) => setXBandNpr(e.target.value ? Number(e.target.value) : null)} />
+                </label>
+                <label>
+                  G/T (dB/K)
+                  <input type="number" step="any" value={xBandGt} onChange={(e) => setXBandGt(Number(e.target.value))} />
                 </label>
               </div>
+              <h4 className="subsection-title">Ka-Band Antenna</h4>
               <div className="input-row">
                 <label>
-                  Fwd Sat. EIRP (dBW)
-                  <input type="number" step="any" value={fwdDownlinkEirpSaturated ?? ""} placeholder="Optional" onChange={(e) => setFwdDownlinkEirpSaturated(e.target.value ? Number(e.target.value) : null)} />
+                  EIRP (dBW)
+                  <input type="number" step="any" value={kaBandEirp} onChange={(e) => setKaBandEirp(Number(e.target.value))} />
                 </label>
                 <label>
-                  Fwd OBO (dB)
-                  <input type="number" step="any" min={0} value={fwdDownlinkObo} onChange={(e) => setFwdDownlinkObo(Number(e.target.value))} />
+                  NPR (dB)
+                  <input type="number" step="any" value={kaBandNpr ?? ""} placeholder="Ideal" onChange={(e) => setKaBandNpr(e.target.value ? Number(e.target.value) : null)} />
                 </label>
                 <label>
-                  Fwd NPR (dB)
-                  <input type="number" step="any" value={fwdDownlinkNpr ?? ""} placeholder="Ideal" onChange={(e) => setFwdDownlinkNpr(e.target.value ? Number(e.target.value) : null)} />
-                </label>
-              </div>
-              <h4 className="subsection-title">Return Link (B → Sat → A)</h4>
-              <div className="input-row">
-                <label>
-                  Uplink G/T (dB/K)
-                  <input type="number" step="any" value={retUplinkGt} onChange={(e) => setRetUplinkGt(Number(e.target.value))} />
-                </label>
-                <label>
-                  Downlink EIRP (dBW)
-                  <input type="number" step="any" value={retDownlinkEirp} onChange={(e) => setRetDownlinkEirp(Number(e.target.value))} />
-                </label>
-              </div>
-              <div className="input-row">
-                <label>
-                  Ret Sat. EIRP (dBW)
-                  <input type="number" step="any" value={retDownlinkEirpSaturated ?? ""} placeholder="Optional" onChange={(e) => setRetDownlinkEirpSaturated(e.target.value ? Number(e.target.value) : null)} />
-                </label>
-                <label>
-                  Ret OBO (dB)
-                  <input type="number" step="any" min={0} value={retDownlinkObo} onChange={(e) => setRetDownlinkObo(Number(e.target.value))} />
-                </label>
-                <label>
-                  Ret NPR (dB)
-                  <input type="number" step="any" value={retDownlinkNpr ?? ""} placeholder="Ideal" onChange={(e) => setRetDownlinkNpr(e.target.value ? Number(e.target.value) : null)} />
+                  G/T (dB/K)
+                  <input type="number" step="any" value={kaBandGt} onChange={(e) => setKaBandGt(Number(e.target.value))} />
                 </label>
               </div>
             </div>
