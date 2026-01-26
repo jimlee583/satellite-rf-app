@@ -1,5 +1,24 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { api } from "../apiClient";
+
+// Debounce hook - must be defined outside the component
+function useDebounce<T>(value: T, delay: number): T {
+  const [debouncedValue, setDebouncedValue] = useState<T>(value);
+  const isFirstRender = useRef(true);
+
+  useEffect(() => {
+    // Skip debounce on first render to set initial value immediately
+    if (isFirstRender.current) {
+      isFirstRender.current = false;
+      return;
+    }
+
+    const handler = setTimeout(() => setDebouncedValue(value), delay);
+    return () => clearTimeout(handler);
+  }, [value, delay]);
+
+  return debouncedValue;
+}
 
 // Terminal preset definitions
 type FrequencyBand = "x" | "ka";
@@ -184,6 +203,30 @@ export const DuplexSatelliteLinkCalculator: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
+  // Weather loss auto-calculation state
+  interface WeatherLossResult {
+    elevation_deg: number;
+    rain_rate_mm_hr: number;
+    weather_loss_db: number;
+  }
+
+  interface HopWeatherLoss {
+    97: WeatherLossResult | null;
+    98: WeatherLossResult | null;
+    99: WeatherLossResult | null;
+  }
+
+  interface AutoWeatherLossState {
+    fwdUplink: HopWeatherLoss;
+    fwdDownlink: HopWeatherLoss;
+    retUplink: HopWeatherLoss;
+    retDownlink: HopWeatherLoss;
+  }
+
+  const [autoWeatherLoss, setAutoWeatherLoss] = useState<AutoWeatherLossState | null>(null);
+  const [weatherLossLoading, setWeatherLossLoading] = useState(false);
+  const [weatherLossError, setWeatherLossError] = useState<string | null>(null);
+
   const toggleSection = (section: keyof typeof expandedSections) => {
     setExpandedSections(prev => ({ ...prev, [section]: !prev[section] }));
   };
@@ -209,6 +252,99 @@ export const DuplexSatelliteLinkCalculator: React.FC = () => {
     setFwdDownlinkFreq(FREQUENCY_DEFAULTS[terminalBBand].downlink);
     setRetUplinkFreq(FREQUENCY_DEFAULTS[terminalBBand].uplink);
   }, [terminalBBand]);
+
+  // Debounced inputs for weather loss calculation
+  // Use a string key to ensure proper comparison (objects create new refs every render)
+  const weatherLossInputKey = `${terminalALat},${terminalALon},${terminalBLat},${terminalBLon},${satLon},${fwdUplinkFreq},${fwdDownlinkFreq},${retUplinkFreq},${retDownlinkFreq}`;
+  const debouncedWeatherInputKey = useDebounce(weatherLossInputKey, 500);
+
+  // Auto-calculate weather loss when inputs change
+  useEffect(() => {
+    // Parse the debounced key string back into values
+    const parts = debouncedWeatherInputKey.split(",").map(Number);
+    const [aLat, aLon, bLat, bLon, sLon, fwdUp, fwdDown, retUp, retDown] = parts;
+
+    // Validate coordinates and frequencies
+    const validCoords =
+      aLat >= -90 && aLat <= 90 &&
+      aLon >= -180 && aLon <= 180 &&
+      bLat >= -90 && bLat <= 90 &&
+      bLon >= -180 && bLon <= 180 &&
+      sLon >= -180 && sLon <= 180;
+    const validFreqs = fwdUp > 0 && fwdDown > 0 && retUp > 0 && retDown > 0;
+
+    if (!validCoords || !validFreqs) {
+      return;
+    }
+
+    const availabilities = [97, 98, 99] as const;
+
+    // Define the 4 hops with their terminal locations and frequencies
+    const hops = [
+      { key: "fwdUplink" as const, lat: aLat, lon: aLon, freq: fwdUp },
+      { key: "fwdDownlink" as const, lat: bLat, lon: bLon, freq: fwdDown },
+      { key: "retUplink" as const, lat: bLat, lon: bLon, freq: retUp },
+      { key: "retDownlink" as const, lat: aLat, lon: aLon, freq: retDown },
+    ];
+
+    const fetchWeatherLoss = async () => {
+      setWeatherLossLoading(true);
+      setWeatherLossError(null);
+
+      try {
+        // Create all 12 API calls (4 hops x 3 availability levels)
+        const calls = hops.flatMap((hop) =>
+          availabilities.map((avail) =>
+            api
+              .weatherLoss({
+                satellite_longitude_deg: sLon,
+                user_latitude_deg: hop.lat,
+                user_longitude_deg: hop.lon,
+                availability_percent: avail,
+                frequency_ghz: hop.freq,
+              })
+              .then((result) => ({ hop: hop.key, avail, result }))
+              .catch((err) => ({ hop: hop.key, avail, error: err.message }))
+          )
+        );
+
+        const results = await Promise.all(calls);
+
+        // Check for any errors (e.g., satellite not visible)
+        const errors = results.filter((r) => "error" in r);
+        if (errors.length > 0) {
+          // Find unique error messages
+          const errorMessages = [...new Set(errors.map((e) => (e as { error: string }).error))];
+          setWeatherLossError(errorMessages.join("; "));
+          setAutoWeatherLoss(null);
+          return;
+        }
+
+        // Build the state object
+        const newState: AutoWeatherLossState = {
+          fwdUplink: { 97: null, 98: null, 99: null },
+          fwdDownlink: { 97: null, 98: null, 99: null },
+          retUplink: { 97: null, 98: null, 99: null },
+          retDownlink: { 97: null, 98: null, 99: null },
+        };
+
+        for (const r of results) {
+          if ("result" in r) {
+            newState[r.hop][r.avail] = r.result;
+          }
+        }
+
+        setAutoWeatherLoss(newState);
+      } catch (err) {
+        setWeatherLossError((err as Error).message);
+        setAutoWeatherLoss(null);
+      } finally {
+        setWeatherLossLoading(false);
+      }
+    };
+
+    fetchWeatherLoss();
+  }, [debouncedWeatherInputKey]);
 
   const handleTerminalAPresetChange = (presetKey: string) => {
     setTerminalAPreset(presetKey);
@@ -699,6 +835,137 @@ export const DuplexSatelliteLinkCalculator: React.FC = () => {
                   Ret Downlink
                   <input type="number" step="any" min={0} value={weatherRetDownlink} onChange={(e) => setWeatherRetDownlink(Number(e.target.value))} />
                 </label>
+              </div>
+
+              {/* Weather Loss Reference Table */}
+              <div className="weather-loss-reference">
+                <div className="weather-loss-header">
+                  <span className="weather-loss-title">ITU-R Calculated Values (click to copy)</span>
+                  {weatherLossLoading && <span className="weather-loss-loading">Calculating...</span>}
+                </div>
+                {weatherLossError && (
+                  <div className="weather-loss-error">{weatherLossError}</div>
+                )}
+                {autoWeatherLoss && !weatherLossError && (
+                  <table className="weather-loss-table">
+                    <thead>
+                      <tr>
+                        <th>Hop</th>
+                        <th>Terminal</th>
+                        <th>Elev</th>
+                        <th>97%</th>
+                        <th>98%</th>
+                        <th>99%</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr>
+                        <td>Fwd Uplink</td>
+                        <td>A</td>
+                        <td>{autoWeatherLoss.fwdUplink[97]?.elevation_deg.toFixed(1)}°</td>
+                        <td
+                          className="clickable-value"
+                          onClick={() => autoWeatherLoss.fwdUplink[97] && setWeatherFwdUplink(Math.round(autoWeatherLoss.fwdUplink[97].weather_loss_db * 100) / 100)}
+                          title="Click to use this value"
+                        >
+                          {autoWeatherLoss.fwdUplink[97]?.weather_loss_db.toFixed(2)}
+                        </td>
+                        <td
+                          className="clickable-value"
+                          onClick={() => autoWeatherLoss.fwdUplink[98] && setWeatherFwdUplink(Math.round(autoWeatherLoss.fwdUplink[98].weather_loss_db * 100) / 100)}
+                          title="Click to use this value"
+                        >
+                          {autoWeatherLoss.fwdUplink[98]?.weather_loss_db.toFixed(2)}
+                        </td>
+                        <td
+                          className="clickable-value"
+                          onClick={() => autoWeatherLoss.fwdUplink[99] && setWeatherFwdUplink(Math.round(autoWeatherLoss.fwdUplink[99].weather_loss_db * 100) / 100)}
+                          title="Click to use this value"
+                        >
+                          {autoWeatherLoss.fwdUplink[99]?.weather_loss_db.toFixed(2)}
+                        </td>
+                      </tr>
+                      <tr>
+                        <td>Fwd Downlink</td>
+                        <td>B</td>
+                        <td>{autoWeatherLoss.fwdDownlink[97]?.elevation_deg.toFixed(1)}°</td>
+                        <td
+                          className="clickable-value"
+                          onClick={() => autoWeatherLoss.fwdDownlink[97] && setWeatherFwdDownlink(Math.round(autoWeatherLoss.fwdDownlink[97].weather_loss_db * 100) / 100)}
+                          title="Click to use this value"
+                        >
+                          {autoWeatherLoss.fwdDownlink[97]?.weather_loss_db.toFixed(2)}
+                        </td>
+                        <td
+                          className="clickable-value"
+                          onClick={() => autoWeatherLoss.fwdDownlink[98] && setWeatherFwdDownlink(Math.round(autoWeatherLoss.fwdDownlink[98].weather_loss_db * 100) / 100)}
+                          title="Click to use this value"
+                        >
+                          {autoWeatherLoss.fwdDownlink[98]?.weather_loss_db.toFixed(2)}
+                        </td>
+                        <td
+                          className="clickable-value"
+                          onClick={() => autoWeatherLoss.fwdDownlink[99] && setWeatherFwdDownlink(Math.round(autoWeatherLoss.fwdDownlink[99].weather_loss_db * 100) / 100)}
+                          title="Click to use this value"
+                        >
+                          {autoWeatherLoss.fwdDownlink[99]?.weather_loss_db.toFixed(2)}
+                        </td>
+                      </tr>
+                      <tr>
+                        <td>Ret Uplink</td>
+                        <td>B</td>
+                        <td>{autoWeatherLoss.retUplink[97]?.elevation_deg.toFixed(1)}°</td>
+                        <td
+                          className="clickable-value"
+                          onClick={() => autoWeatherLoss.retUplink[97] && setWeatherRetUplink(Math.round(autoWeatherLoss.retUplink[97].weather_loss_db * 100) / 100)}
+                          title="Click to use this value"
+                        >
+                          {autoWeatherLoss.retUplink[97]?.weather_loss_db.toFixed(2)}
+                        </td>
+                        <td
+                          className="clickable-value"
+                          onClick={() => autoWeatherLoss.retUplink[98] && setWeatherRetUplink(Math.round(autoWeatherLoss.retUplink[98].weather_loss_db * 100) / 100)}
+                          title="Click to use this value"
+                        >
+                          {autoWeatherLoss.retUplink[98]?.weather_loss_db.toFixed(2)}
+                        </td>
+                        <td
+                          className="clickable-value"
+                          onClick={() => autoWeatherLoss.retUplink[99] && setWeatherRetUplink(Math.round(autoWeatherLoss.retUplink[99].weather_loss_db * 100) / 100)}
+                          title="Click to use this value"
+                        >
+                          {autoWeatherLoss.retUplink[99]?.weather_loss_db.toFixed(2)}
+                        </td>
+                      </tr>
+                      <tr>
+                        <td>Ret Downlink</td>
+                        <td>A</td>
+                        <td>{autoWeatherLoss.retDownlink[97]?.elevation_deg.toFixed(1)}°</td>
+                        <td
+                          className="clickable-value"
+                          onClick={() => autoWeatherLoss.retDownlink[97] && setWeatherRetDownlink(Math.round(autoWeatherLoss.retDownlink[97].weather_loss_db * 100) / 100)}
+                          title="Click to use this value"
+                        >
+                          {autoWeatherLoss.retDownlink[97]?.weather_loss_db.toFixed(2)}
+                        </td>
+                        <td
+                          className="clickable-value"
+                          onClick={() => autoWeatherLoss.retDownlink[98] && setWeatherRetDownlink(Math.round(autoWeatherLoss.retDownlink[98].weather_loss_db * 100) / 100)}
+                          title="Click to use this value"
+                        >
+                          {autoWeatherLoss.retDownlink[98]?.weather_loss_db.toFixed(2)}
+                        </td>
+                        <td
+                          className="clickable-value"
+                          onClick={() => autoWeatherLoss.retDownlink[99] && setWeatherRetDownlink(Math.round(autoWeatherLoss.retDownlink[99].weather_loss_db * 100) / 100)}
+                          title="Click to use this value"
+                        >
+                          {autoWeatherLoss.retDownlink[99]?.weather_loss_db.toFixed(2)}
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                )}
               </div>
 
               <h4 className="subsection-title">Channel Bandwidth (DVB-S2)</h4>
