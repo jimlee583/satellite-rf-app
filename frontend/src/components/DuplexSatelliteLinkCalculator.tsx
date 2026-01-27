@@ -438,13 +438,25 @@ export const DuplexSatelliteLinkCalculator: React.FC = () => {
     }
   };
 
-  const renderHopResult = (hop: SingleHopResult, label: string) => (
+  const renderHopResult = (hop: SingleHopResult, label: string, ciDb: number | null = null) => {
+    // Calculate C/(N+I) if both C/N and C/I are available
+    let cnirDb: number | null = null;
+    if (hop.cn_db !== null && ciDb !== null) {
+      const cnLinear = Math.pow(10, hop.cn_db / 10);
+      const ciLinear = Math.pow(10, ciDb / 10);
+      cnirDb = 10 * Math.log10(1 / (1/cnLinear + 1/ciLinear));
+    }
+
+    return (
     <div className="hop-result">
       <h5>{label}</h5>
       <div className="hop-metrics">
         <p><strong>C/N₀:</strong> {hop.cn0_db_hz.toFixed(2)} dB-Hz</p>
         {hop.cn_db !== null && (
           <p><strong>C/N:</strong> {hop.cn_db.toFixed(2)} dB</p>
+        )}
+        {cnirDb !== null && (
+          <p><strong>C/(N+I):</strong> {cnirDb.toFixed(2)} dB</p>
         )}
         <p><strong>Off-axis:</strong> {hop.off_axis_angle_deg.toFixed(2)}°</p>
       </div>
@@ -461,6 +473,7 @@ export const DuplexSatelliteLinkCalculator: React.FC = () => {
       </details>
     </div>
   );
+  };
 
   return (
     <section className="card card-wide">
@@ -1069,8 +1082,8 @@ export const DuplexSatelliteLinkCalculator: React.FC = () => {
               </details>
             )}
             <div className="hops-grid">
-              {renderHopResult(result.forward_link.uplink, "Uplink (A → Sat)")}
-              {renderHopResult(result.forward_link.downlink, "Downlink (Sat → B)")}
+              {renderHopResult(result.forward_link.uplink, "Uplink (A → Sat)", result.forward_link.ci_terminal_hpa_db)}
+              {renderHopResult(result.forward_link.downlink, "Downlink (Sat → B)", result.forward_link.ci_satellite_transponder_db)}
             </div>
           </div>
 
@@ -1111,8 +1124,8 @@ export const DuplexSatelliteLinkCalculator: React.FC = () => {
               </details>
             )}
             <div className="hops-grid">
-              {renderHopResult(result.return_link.uplink, "Uplink (B → Sat)")}
-              {renderHopResult(result.return_link.downlink, "Downlink (Sat → A)")}
+              {renderHopResult(result.return_link.uplink, "Uplink (B → Sat)", result.return_link.ci_terminal_hpa_db)}
+              {renderHopResult(result.return_link.downlink, "Downlink (Sat → A)", result.return_link.ci_satellite_transponder_db)}
             </div>
           </div>
         </div>
