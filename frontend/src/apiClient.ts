@@ -46,9 +46,6 @@ export const api = {
   gt: (payload: { antenna_gain_db: number; system_noise_temp_k: number }) =>
     request<{ gt_db_per_k: number }>("/calculations/gt", payload),
 
-  ebn0: (payload: { cn0_db_hz: number; data_rate_bps: number }) =>
-    request<{ ebn0_db: number }>("/calculations/ebn0", payload),
-
   phasedArrayGain: (payload: {
     element_gain_db: number;
     num_elements: number;
