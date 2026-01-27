@@ -2,7 +2,6 @@ import React from "react";
 import { LinkBudgetCalculator } from "./components/LinkBudgetCalculator";
 import { EIRPCalculator } from "./components/EIRPCalculator";
 import { GTCalculator } from "./components/GTCalculator";
-import { EbN0Calculator } from "./components/EbN0Calculator";
 import { PhasedArrayGainCalculator } from "./components/PhasedArrayGainCalculator";
 import { ScanLossCalculator } from "./components/ScanLossCalculator";
 import { AzimuthCalculator } from "./components/AzimuthCalculator";
@@ -17,7 +16,7 @@ const App: React.FC = () => {
         <div>
           <h1>Satellite RF Communications Calculator</h1>
           <p className="app-subtitle">
-            Quick evaluations of link budgets, EIRP, G/T, Eb/N0, phased arrays, scan loss, azimuth, beam off-axis, weather loss, and duplex satellite links.
+            Quick evaluations of link budgets, EIRP, G/T, phased arrays, scan loss, azimuth, beam off-axis, weather loss, and duplex satellite links.
           </p>
         </div>
         <span className="app-badge">FastAPI · React · TypeScript</span>
@@ -29,7 +28,6 @@ const App: React.FC = () => {
           <LinkBudgetCalculator />
           <EIRPCalculator />
           <GTCalculator />
-          <EbN0Calculator />
           <PhasedArrayGainCalculator />
           <ScanLossCalculator />
           <AzimuthCalculator />
