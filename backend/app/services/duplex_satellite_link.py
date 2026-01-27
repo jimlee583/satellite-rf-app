@@ -30,6 +30,112 @@ from .link_budget import free_space_path_loss_db
 # Constants
 BOLTZMANN_DBW_PER_K_HZ = -228.6  # Boltzmann constant in dBW/K/Hz
 
+# DVB-S2 MODCOD lookup table (sorted by increasing Es/N0 threshold)
+# Thresholds are quasi-error-free (QEF) Es/N0 values from DVB-S2 standard
+DVB_S2_MODCODS = [
+    {"name": "QPSK 1/4", "es_n0_threshold_db": -2.35, "spectral_efficiency": 0.49},
+    {"name": "QPSK 1/3", "es_n0_threshold_db": -1.24, "spectral_efficiency": 0.66},
+    {"name": "QPSK 2/5", "es_n0_threshold_db": -0.30, "spectral_efficiency": 0.79},
+    {"name": "QPSK 1/2", "es_n0_threshold_db": 1.00, "spectral_efficiency": 0.99},
+    {"name": "QPSK 3/5", "es_n0_threshold_db": 2.23, "spectral_efficiency": 1.19},
+    {"name": "QPSK 2/3", "es_n0_threshold_db": 3.10, "spectral_efficiency": 1.32},
+    {"name": "QPSK 3/4", "es_n0_threshold_db": 4.03, "spectral_efficiency": 1.49},
+    {"name": "QPSK 4/5", "es_n0_threshold_db": 4.68, "spectral_efficiency": 1.59},
+    {"name": "QPSK 5/6", "es_n0_threshold_db": 5.18, "spectral_efficiency": 1.65},
+    {"name": "QPSK 8/9", "es_n0_threshold_db": 6.20, "spectral_efficiency": 1.77},
+    {"name": "QPSK 9/10", "es_n0_threshold_db": 6.42, "spectral_efficiency": 1.79},
+    {"name": "8PSK 3/5", "es_n0_threshold_db": 5.50, "spectral_efficiency": 1.78},
+    {"name": "8PSK 2/3", "es_n0_threshold_db": 6.62, "spectral_efficiency": 1.98},
+    {"name": "8PSK 3/4", "es_n0_threshold_db": 7.91, "spectral_efficiency": 2.23},
+    {"name": "8PSK 5/6", "es_n0_threshold_db": 9.35, "spectral_efficiency": 2.48},
+    {"name": "8PSK 8/9", "es_n0_threshold_db": 10.69, "spectral_efficiency": 2.65},
+    {"name": "8PSK 9/10", "es_n0_threshold_db": 10.98, "spectral_efficiency": 2.68},
+    {"name": "16APSK 2/3", "es_n0_threshold_db": 8.97, "spectral_efficiency": 2.64},
+    {"name": "16APSK 3/4", "es_n0_threshold_db": 10.21, "spectral_efficiency": 2.97},
+    {"name": "16APSK 4/5", "es_n0_threshold_db": 11.03, "spectral_efficiency": 3.17},
+    {"name": "16APSK 5/6", "es_n0_threshold_db": 11.61, "spectral_efficiency": 3.30},
+    {"name": "16APSK 8/9", "es_n0_threshold_db": 12.89, "spectral_efficiency": 3.52},
+    {"name": "16APSK 9/10", "es_n0_threshold_db": 13.13, "spectral_efficiency": 3.57},
+    {"name": "32APSK 3/4", "es_n0_threshold_db": 12.73, "spectral_efficiency": 3.70},
+    {"name": "32APSK 4/5", "es_n0_threshold_db": 13.64, "spectral_efficiency": 3.95},
+    {"name": "32APSK 5/6", "es_n0_threshold_db": 14.28, "spectral_efficiency": 4.12},
+    {"name": "32APSK 8/9", "es_n0_threshold_db": 15.69, "spectral_efficiency": 4.40},
+    {"name": "32APSK 9/10", "es_n0_threshold_db": 16.05, "spectral_efficiency": 4.45},
+]
+
+
+def select_modcod(es_n0_db: Optional[float], margin_db: float = 1.0) -> Optional[dict]:
+    """
+    Select optimal DVB-S2 MODCOD based on Es/N0 with implementation margin.
+
+    Selects the highest spectral efficiency MODCOD whose threshold is met
+    with the specified margin.
+
+    Parameters
+    ----------
+    es_n0_db : float | None
+        Available Es/N0 in dB (None if symbol rate not provided)
+    margin_db : float
+        Implementation margin in dB (default 1.0 dB)
+
+    Returns
+    -------
+    dict | None
+        Selected MODCOD dict with 'name', 'es_n0_threshold_db', 'spectral_efficiency',
+        or None if Es/N0 is too low or not provided
+    """
+    if es_n0_db is None:
+        return None
+
+    available_es_n0 = es_n0_db - margin_db
+
+    # Find the highest efficiency MODCOD that meets the threshold
+    selected = None
+    for modcod in DVB_S2_MODCODS:
+        if available_es_n0 >= modcod["es_n0_threshold_db"]:
+            # Keep updating to get highest efficiency that meets threshold
+            if selected is None or modcod["spectral_efficiency"] > selected["spectral_efficiency"]:
+                selected = modcod
+
+    return selected
+
+
+def compute_effective_es_n0(
+    cnir_db: Optional[float],
+    es_n0_db: Optional[float],
+    roll_off_factor: float,
+) -> Optional[float]:
+    """
+    Compute effective Es/N0 accounting for intermodulation.
+
+    When intermodulation is present, the effective Es/N0 is derived from
+    C/(N+I) rather than just thermal C/N.
+
+    Es/N0_effective = C/(N+I) + 10*log10(1 + roll_off)
+
+    This converts from C/(N+I) over channel bandwidth to symbol energy ratio.
+
+    Parameters
+    ----------
+    cnir_db : float | None
+        Total C/(N+I) in dB (includes thermal noise and intermodulation)
+    es_n0_db : float | None
+        Thermal Es/N0 in dB (used when no intermodulation)
+    roll_off_factor : float
+        DVB-S2 roll-off factor (0.20, 0.25, or 0.35)
+
+    Returns
+    -------
+    float | None
+        Effective Es/N0 in dB, or None if inputs are missing
+    """
+    if cnir_db is None:
+        return es_n0_db
+
+    # Convert C/(N+I) over bandwidth to Es/N0
+    # Es/N0 = C/(N+I) + 10*log10(B/Rs) = C/(N+I) + 10*log10(1+α)
+    return cnir_db + 10.0 * math.log10(1.0 + roll_off_factor)
+
 
 def compute_operating_eirp(
     eirp_dbw: float,
@@ -704,6 +810,19 @@ def compute_duplex_satellite_link(
     ret_es_n0 = cn0_to_es_n0(ret_combined_cn0, symbol_rate_hz) if symbol_rate_hz else None
 
     # =========================================================================
+    # DVB-S2 MODCOD SELECTION
+    # =========================================================================
+
+    # Forward link MODCOD selection
+    # Use effective Es/N0 that accounts for intermodulation when present
+    fwd_effective_es_n0 = compute_effective_es_n0(fwd_cnir, fwd_es_n0, roll_off_factor)
+    fwd_modcod = select_modcod(fwd_effective_es_n0)
+
+    # Return link MODCOD selection
+    ret_effective_es_n0 = compute_effective_es_n0(ret_cnir, ret_es_n0, roll_off_factor)
+    ret_modcod = select_modcod(ret_effective_es_n0)
+
+    # =========================================================================
     # WARNINGS
     # =========================================================================
 
@@ -752,6 +871,8 @@ def compute_duplex_satellite_link(
             "cnir_db": fwd_cnir,
             "es_n0_db": fwd_es_n0,
             "channel_bandwidth_mhz": bandwidth_mhz,
+            "selected_modcod": fwd_modcod["name"] if fwd_modcod else None,
+            "spectral_efficiency": fwd_modcod["spectral_efficiency"] if fwd_modcod else None,
         },
         "return_link": {
             "uplink": {
@@ -788,6 +909,8 @@ def compute_duplex_satellite_link(
             "cnir_db": ret_cnir,
             "es_n0_db": ret_es_n0,
             "channel_bandwidth_mhz": bandwidth_mhz,
+            "selected_modcod": ret_modcod["name"] if ret_modcod else None,
+            "spectral_efficiency": ret_modcod["spectral_efficiency"] if ret_modcod else None,
         },
         "geometry": {
             "terminal_a_slant_range_km": range_a_km,

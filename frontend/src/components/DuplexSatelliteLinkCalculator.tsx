@@ -97,6 +97,9 @@ interface LinkDirectionResult {
   combined_cn_db: number | null;
   es_n0_db: number | null;
   channel_bandwidth_mhz: number | null;
+  // DVB-S2 MODCOD selection
+  selected_modcod: string | null;
+  spectral_efficiency: number | null;
 }
 
 interface GeometryResult {
@@ -1064,6 +1067,14 @@ export const DuplexSatelliteLinkCalculator: React.FC = () => {
               {result.forward_link.cnir_db !== null && (
                 <p className="cnir-highlight"><strong>C/(N+I):</strong> {result.forward_link.cnir_db.toFixed(2)} dB</p>
               )}
+              {result.forward_link.selected_modcod !== null && (
+                <p className="modcod-selection">
+                  <strong>MODCOD:</strong> {result.forward_link.selected_modcod}
+                  {result.forward_link.spectral_efficiency !== null && (
+                    <span> ({result.forward_link.spectral_efficiency.toFixed(2)} bits/symbol)</span>
+                  )}
+                </p>
+              )}
               {result.forward_link.channel_bandwidth_mhz !== null && (
                 <p className="bandwidth-info">BW: {result.forward_link.channel_bandwidth_mhz.toFixed(2)} MHz</p>
               )}
@@ -1105,6 +1116,14 @@ export const DuplexSatelliteLinkCalculator: React.FC = () => {
               )}
               {result.return_link.cnir_db !== null && (
                 <p className="cnir-highlight"><strong>C/(N+I):</strong> {result.return_link.cnir_db.toFixed(2)} dB</p>
+              )}
+              {result.return_link.selected_modcod !== null && (
+                <p className="modcod-selection">
+                  <strong>MODCOD:</strong> {result.return_link.selected_modcod}
+                  {result.return_link.spectral_efficiency !== null && (
+                    <span> ({result.return_link.spectral_efficiency.toFixed(2)} bits/symbol)</span>
+                  )}
+                </p>
               )}
               {result.return_link.channel_bandwidth_mhz !== null && (
                 <p className="bandwidth-info">BW: {result.return_link.channel_bandwidth_mhz.toFixed(2)} MHz</p>
