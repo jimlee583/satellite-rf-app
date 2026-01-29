@@ -216,6 +216,8 @@ export const api = {
         combined_cn_db: number | null;
         es_n0_db: number | null;
         channel_bandwidth_mhz: number | null;
+        selected_modcod: string | null;
+        spectral_efficiency: number | null;
       };
       return_link: {
         uplink: {
@@ -252,6 +254,8 @@ export const api = {
         combined_cn_db: number | null;
         es_n0_db: number | null;
         channel_bandwidth_mhz: number | null;
+        selected_modcod: string | null;
+        spectral_efficiency: number | null;
       };
       geometry: {
         terminal_a_slant_range_km: number;

@@ -272,6 +272,10 @@ class LinkDirectionResult(BaseModel):
     es_n0_db: Optional[float] = Field(None, description="Es/N0 in dB (from C/N0 - 10*log10(symbol_rate))")
     channel_bandwidth_mhz: Optional[float] = Field(None, description="Occupied channel bandwidth in MHz")
 
+    # DVB-S2 MODCOD selection (if symbol rate provided)
+    selected_modcod: Optional[str] = Field(None, description="Selected DVB-S2 MODCOD name")
+    spectral_efficiency: Optional[float] = Field(None, description="Spectral efficiency in bits/symbol")
+
 
 class GeometryResult(BaseModel):
     """Geometry summary"""
