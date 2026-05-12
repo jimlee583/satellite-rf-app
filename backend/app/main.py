@@ -1,9 +1,12 @@
-from pathlib import Path
+"""FastAPI application entry point.
+
+The backend is an API-only service. Static frontend assets are hosted
+separately on Firebase Hosting (see frontend/firebase.json), so this app
+no longer mounts the Vite build output.
+"""
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.staticfiles import StaticFiles
-from fastapi.responses import FileResponse, PlainTextResponse
 
 from .routers import calculations
 
@@ -15,12 +18,15 @@ def create_app() -> FastAPI:
         description="Backend API for common satellite RF link calculations.",
     )
 
-    # CORS – allow local frontend during development
+    # CORS: allow local dev (Vite proxy + direct) and the production
+    # Firebase Hosting origins. Update if the Firebase project changes.
     origins = [
         "http://localhost:3000",
         "http://127.0.0.1:3000",
         "http://localhost:5173",
         "http://127.0.0.1:5173",
+        "https://satellite-rf-app.web.app",
+        "https://satellite-rf-app.firebaseapp.com",
     ]
 
     app.add_middleware(
@@ -31,39 +37,11 @@ def create_app() -> FastAPI:
         allow_headers=["*"],
     )
 
-    # Routers
     app.include_router(calculations.router, prefix="/api")
 
-    # --- Frontend static serving (for Docker / Cloud Run) ---
-
-    # Path: /app/backend/app/main.py inside the container
-    # parents[0] = app
-    # parents[1] = backend
-    # parents[2] = /app  (Docker WORKDIR)
-    frontend_dist = Path(__file__).resolve().parents[2] / "frontend" / "dist"
-
-    if frontend_dist.exists():
-        # In production/container: serve built Vite assets
-        app.mount(
-            "/assets",
-            StaticFiles(directory=frontend_dist / "assets"),
-            name="assets",
-        )
-
-        @app.get("/", include_in_schema=False)
-        async def serve_frontend():
-            return FileResponse(frontend_dist / "index.html")
-    else:
-        # In local dev (using Vite dev server), dist usually doesn't exist.
-        # This keeps "/" from breaking and nudges you to use :3000.
-        @app.get("/", include_in_schema=False)
-        async def frontend_not_built():
-            return PlainTextResponse(
-                "Frontend build not found.\n"
-                "In development, use http://localhost:3000 for the Vite dev server.\n"
-                "In production/Docker, run `npm run build` in frontend/ first.",
-                status_code=200,
-            )
+    @app.get("/health")
+    def health() -> dict[str, str]:
+        return {"status": "ok"}
 
     return app
 
