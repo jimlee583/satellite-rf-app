@@ -75,7 +75,7 @@ From the repository root:
 
 This script:
 - runs `uv sync` in `backend/` to install Python deps,
-- starts `uvicorn app.main:app` on `http://localhost:8000`,
+- starts `uvicorn app.main:app` on `http://localhost:8123`,
 - runs `npm install` in `frontend/` if needed, and
 - starts the Vite dev server on `http://localhost:3000`.
 
@@ -88,11 +88,11 @@ Requires [uv](https://docs.astral.sh/uv/).
 ```bash
 cd backend
 uv sync
-uv run uvicorn app.main:app --reload --port 8000
+uv run uvicorn app.main:app --reload --port 8123
 ```
 
-The API will be available at `http://localhost:8000`, with interactive docs at
-`http://localhost:8000/docs`.
+The API will be available at `http://localhost:8123`, with interactive docs at
+`http://localhost:8123/docs`.
 
 ### Backend tests
 
@@ -112,12 +112,12 @@ npm run dev
 ```
 
 The dev server starts at `http://localhost:3000` and proxies `/api` requests
-to the backend at port 8000 via the Vite dev-server proxy (configured in
+to the backend at port 8123 via the Vite dev-server proxy (configured in
 [`frontend/vite.config.ts`](frontend/vite.config.ts)).
 
 > **Local dev vs production:** In local development the frontend sends
 > relative `/api/...` requests that the Vite proxy forwards to the backend on
-> `localhost:8000`. In production there is no proxy — the frontend calls the
+> `localhost:8123`. In production there is no proxy — the frontend calls the
 > Cloud Run backend URL directly (see *Frontend Deployment* below).
 
 #### API Base URL Behavior
@@ -127,7 +127,7 @@ where API requests are sent:
 
 | Environment | `VITE_API_BASE_URL` | API calls go to |
 |---|---|---|
-| Local dev (`npm run dev`) | **unset** (default) | Relative `/api/...` — handled by the Vite dev proxy to `localhost:8000` |
+| Local dev (`npm run dev`) | **unset** (default) | Relative `/api/...` — handled by the Vite dev proxy to `localhost:8123` |
 | Production build (`npm run build`) | Read from `frontend/.env.production` | Full URL, e.g. `https://satellite-rf-backend-...run.app/api/...` |
 
 Vite automatically loads [`frontend/.env.production`](frontend/.env.production)
@@ -340,7 +340,7 @@ CORS list in `main.py` **and** redeploy the backend.
 ```
 
 - **Local dev** — Vite proxies API requests (`localhost:3000` ->
-  `localhost:8000`); no CORS needed for local-to-local calls.
+  `localhost:8123`); no CORS needed for local-to-local calls.
 - **Production** — The browser loads the SPA from Firebase Hosting and makes
   direct `fetch()` calls to the Cloud Run backend URL. CORS headers are
   required because the two origins differ.

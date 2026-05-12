@@ -38,7 +38,7 @@ const App: React.FC = () => {
 
       <footer className="app-footer">
         <p>
-          Backend at <code>http://localhost:8000/api</code>, frontend at{" "}
+          Backend at <code>http://localhost:8123/api</code>, frontend at{" "}
           <code>http://localhost:3000</code>.
         </p>
       </footer>
