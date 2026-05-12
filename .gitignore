@@ -42,6 +42,11 @@ yarn-error.log*
 frontend/.env
 frontend/.env.local
 
+# Firebase
+.firebase/
+firebase-debug.log
+firebase-debug.*.log
+
 #########################
 # OS / Editor / Cursor
 #########################
