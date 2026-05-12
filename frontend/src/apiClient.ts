@@ -1,7 +1,7 @@
 // API base URL is read from VITE_API_BASE_URL at build time.
 //   - Local dev: leave VITE_API_BASE_URL unset. Calls are sent to relative
 //     `/api/...` paths and the Vite dev-server proxy (see vite.config.ts)
-//     forwards them to the FastAPI backend on port 8000.
+//     forwards them to the FastAPI backend on port 8123.
 //   - Production build: VITE_API_BASE_URL points at the Cloud Run backend
 //     (see frontend/.env.production). Calls go directly to that origin.
 const API_ORIGIN = (import.meta.env.VITE_API_BASE_URL ?? "").trim().replace(/\/+$/, "");

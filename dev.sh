@@ -32,9 +32,9 @@ echo "Syncing backend dependencies with uv ..."
 (cd "${BACKEND_DIR}" && uv sync)
 
 echo ""
-echo "Starting FastAPI backend on http://localhost:8000 ..."
+echo "Starting FastAPI backend on http://localhost:8123 ..."
 cd "${BACKEND_DIR}"
-uv run uvicorn app.main:app --reload --host 0.0.0.0 --port 8000 &
+uv run uvicorn app.main:app --reload --host 0.0.0.0 --port 8123 &
 BACKEND_PID=$!
 echo "Backend PID: ${BACKEND_PID}"
 
