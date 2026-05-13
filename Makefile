@@ -2,13 +2,19 @@
 
 # GCP / Firebase defaults — override on the command line if needed.
 # Example: make build-backend TAG=v2 PROJECT_ID=my-project
-PROJECT_ID ?= satellite-rf-app
-REGION ?= us-west4
-REPO ?= satellite-rf-backend
-IMAGE ?= satellite-rf-backend
-SERVICE ?= satellite-rf-backend
-TAG ?= latest
-REGISTRY := $(REGION)-docker.pkg.dev/$(PROJECT_ID)/$(REPO)/$(IMAGE)
+#
+# Note: we deliberately use `=` (not `?=`) so that stale shell env vars
+# (e.g. a leftover `export IMAGE=...` from following older docs) cannot
+# silently override these defaults. Command-line overrides like
+# `make build-backend TAG=v1` still win because make gives them the
+# highest precedence.
+PROJECT_ID = satellite-rf-app
+REGION = us-west4
+REPO = satellite-rf-backend
+IMAGE = satellite-rf-backend
+SERVICE = satellite-rf-backend
+TAG = latest
+REGISTRY = $(REGION)-docker.pkg.dev/$(PROJECT_ID)/$(REPO)/$(IMAGE)
 
 install:
 	cd backend && uv sync
