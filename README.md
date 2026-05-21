@@ -50,17 +50,108 @@ satellite_rf_app/
 
 ---
 
-## Production URLs
+## Getting Started
+
+### Run locally
+
+From the repository root:
+
+```bash
+make install   # one-time: uv sync + npm install
+make dev       # backend on :8123 + Vite on :3000
+```
+
+Open **http://localhost:3000** in your browser. Press `Ctrl+C` to stop.
+
+Requires [uv](https://docs.astral.sh/uv/) and Node.js >= 18. See
+[Local Development](#local-development) for backend-only / frontend-only options.
+
+### Production site
 
 | Service | URL |
 |---|---|
-| Frontend (Firebase Hosting) | `https://satellite-rf-app.web.app` |
-| Backend (Cloud Run) | `https://satellite-rf-backend-REPLACE_ME.us-west4.run.app` |
-| Backend API docs | `https://satellite-rf-backend-REPLACE_ME.us-west4.run.app/docs` |
+| **Website (use this)** | **https://satellite-rf-app.web.app** |
+| Alternate Firebase URL | `https://satellite-rf-app.firebaseapp.com` |
+| Backend API | `https://satellite-rf-backend-427295995162.us-west4.run.app` |
+| Backend API docs | `https://satellite-rf-backend-427295995162.us-west4.run.app/docs` |
 
-> Replace the `REPLACE_ME` segment with the project-number prefix that Cloud
-> Run assigns after the first deploy, and update
-> [`frontend/.env.production`](frontend/.env.production) with the real URL.
+The website URL is the one to bookmark. The backend URL is used internally by
+the frontend and for API testing — Cloud Run always includes the GCP project
+number in its default `*.run.app` address and that cannot be shortened.
+
+### First-time production setup
+
+Do this once per machine / GCP project before the first deploy.
+
+1. **Install tools:** [Docker Desktop](https://docs.docker.com/get-docker/)
+   (must be running), [`gcloud` CLI](https://cloud.google.com/sdk/docs/install),
+   and [Firebase CLI](https://firebase.google.com/docs/cli).
+
+2. **Authenticate:**
+   ```bash
+   gcloud auth login
+   gcloud config set project satellite-rf-app
+   gcloud auth configure-docker us-west4-docker.pkg.dev
+
+   firebase login
+   ```
+
+3. **Link Firebase to the GCP project** (required before the first
+   `make deploy-frontend`; skip if hosting is already set up):
+   ```bash
+   firebase projects:addfirebase satellite-rf-app
+   ```
+
+4. **Create the Artifact Registry repo** (skip if it already exists):
+   ```bash
+   gcloud artifacts repositories create satellite-rf-backend \
+     --repository-format=docker \
+     --location=us-west4 \
+     --project=satellite-rf-app
+   ```
+
+5. **Deploy the backend** (needed before the frontend can call the API):
+   ```bash
+   make build-backend TAG=v1
+   make deploy-backend TAG=v1
+   ```
+
+6. **Set the backend URL** in
+   [`frontend/.env.production`](frontend/.env.production). Look it up with:
+   ```bash
+   gcloud run services describe satellite-rf-backend \
+     --region=us-west4 --format='value(status.url)'
+   ```
+   Set `VITE_API_BASE_URL` to that value (no trailing slash). This repo
+   already points at the live backend; update the file only if you deploy to
+   a different GCP project.
+
+7. **Deploy the frontend:**
+   ```bash
+   make deploy-frontend
+   ```
+
+8. **Verify:**
+   ```bash
+   curl -fsS https://satellite-rf-backend-427295995162.us-west4.run.app/health
+   # -> {"status":"ok"}
+   ```
+   Open **https://satellite-rf-app.web.app** in your browser.
+
+### Subsequent deploys
+
+Pick a **new tag** for each release (`v2`, `v3`, or a git short SHA):
+
+```bash
+make deploy TAG=v2
+```
+
+Or deploy backend and frontend separately:
+
+```bash
+make build-backend TAG=v2 && make deploy-backend TAG=v2
+make deploy-frontend
+```
 
 ---
 
@@ -185,7 +276,7 @@ a deploy-ready bundle.
 To override in local development (e.g. to point at the remote backend):
 
 ```bash
-VITE_API_BASE_URL=https://satellite-rf-backend-REPLACE_ME.us-west4.run.app npm run dev
+VITE_API_BASE_URL=https://satellite-rf-backend-427295995162.us-west4.run.app npm run dev
 ```
 
 ---
@@ -204,17 +295,17 @@ The backend is a Dockerized FastAPI service deployed to **Google Cloud Run**.
 
 ### Prerequisites (one-time)
 
-- [Docker](https://docs.docker.com/get-docker/) with `buildx` (bundled with
-  Docker Desktop).
-- [`gcloud` CLI](https://cloud.google.com/sdk/docs/install) authenticated
-  against the project:
-  ```bash
-  gcloud auth login
-  gcloud config set project satellite-rf-app
-  gcloud auth configure-docker us-west4-docker.pkg.dev
-  ```
-- An Artifact Registry repo named `satellite-rf-backend` in `us-west4`
-  (create once with `gcloud artifacts repositories create ...`).
+See [First-time production setup](#first-time-production-setup) for the full
+checklist. In short: Docker Desktop running, `gcloud` and `firebase` CLI
+authenticated, Firebase linked to the GCP project, and an Artifact Registry
+repo in `us-west4`:
+
+```bash
+gcloud artifacts repositories create satellite-rf-backend \
+  --repository-format=docker \
+  --location=us-west4 \
+  --project=satellite-rf-app
+```
 
 ### Rebuild & Redeploy
 
@@ -239,7 +330,7 @@ make deploy TAG=v1
 **Verify the deploy:**
 
 ```bash
-curl -fsS https://satellite-rf-backend-REPLACE_ME.us-west4.run.app/health
+curl -fsS https://satellite-rf-backend-427295995162.us-west4.run.app/health
 # -> {"status":"ok"}
 ```
 
@@ -301,8 +392,14 @@ Hosting**.
 
 - [Firebase CLI](https://firebase.google.com/docs/cli) installed and
   authenticated (`firebase login`).
+- Firebase linked to the GCP project (once per project):
+  ```bash
+  firebase projects:addfirebase satellite-rf-app
+  ```
 - `frontend/.firebaserc` references the Firebase project `satellite-rf-app`
   (update if your project ID differs).
+- [`frontend/.env.production`](frontend/.env.production) set to the Cloud Run
+  backend URL (see [Changing the backend URL](#changing-the-backend-url-used-by-the-frontend)).
 
 ### Rebuild & Redeploy
 
@@ -347,7 +444,7 @@ Edit the one-line file
 [`frontend/.env.production`](frontend/.env.production):
 
 ```
-VITE_API_BASE_URL=https://satellite-rf-backend-REPLACE_ME.us-west4.run.app
+VITE_API_BASE_URL=https://satellite-rf-backend-427295995162.us-west4.run.app
 ```
 
 then redeploy with `npm run deploy`. For a one-off build against a different
@@ -367,7 +464,8 @@ A typical end-to-end release from a clean `main` branch:
 ```bash
 cd /path/to/satellite_rf_app
 make deploy TAG=v1   # bump TAG each release: v2, v3, ..., or $(git rev-parse --short HEAD)
-curl -fsS https://satellite-rf-backend-REPLACE_ME.us-west4.run.app/health
+curl -fsS https://satellite-rf-backend-427295995162.us-west4.run.app/health
+# open https://satellite-rf-app.web.app
 ```
 
 `make deploy` runs `build-backend` → `deploy-backend` → `deploy-frontend` in
@@ -443,6 +541,15 @@ CORS list in `main.py` **and** redeploy the backend.
 Cloud Run requires a `linux/amd64` image. The `--platform linux/amd64` flag
 in the `docker buildx build` command ensures the image is built for the
 correct architecture, even when building on an Apple Silicon (arm64) Mac.
+
+### Common deploy errors
+
+| Error | Fix |
+|---|---|
+| `Cannot connect to the Docker daemon` | Start **Docker Desktop** and retry. |
+| `Repository "satellite-rf-backend" not found` | Run the Artifact Registry create command in [First-time production setup](#first-time-production-setup). |
+| Firebase `404` / `No Hosting site detected` on first deploy | Run `firebase projects:addfirebase satellite-rf-app`, then retry `make deploy-frontend`. |
+| Frontend loads but API calls fail | Check `frontend/.env.production` has the correct Cloud Run URL, then redeploy the frontend. Also confirm the origin is in the CORS list in `backend/app/main.py`. |
 
 ---
 

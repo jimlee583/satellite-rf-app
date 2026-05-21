@@ -1,5 +1,6 @@
 {
   "hosting": {
+    "site": "satellite-rf-app",
     "public": "dist",
     "ignore": [
       "firebase.json",
